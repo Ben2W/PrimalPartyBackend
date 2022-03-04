@@ -1,2 +1,2 @@
 # PrimalPartyBackend
-Backend
+GitHub repository for backend of PrimalParty
