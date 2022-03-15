@@ -26,7 +26,7 @@ app.use(express.json())
 //Connections
 
 //local mongoose connection
-mongoose.connect('mongodb://localhost:27017/primalparty', {
+mongoose.connect('mongodb://bwerner:uK4iJLMqnv1yElCkpFUU53loTSljAkj4EtAC4YqMtMW2rZXIOaU9Qsb4CxL9lU3WfYFqec953ZBa1mCNWMQncw==@bwerner.mongo.cosmos.azure.com:10255/?ssl=true&retrywrites=false&maxIdleTimeMS=120000&appName=@bwerner@', {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
