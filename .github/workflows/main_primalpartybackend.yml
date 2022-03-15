@@ -21,6 +21,12 @@ jobs:
         with:
           node-version: '16.x'
 
+      - name: Create env file
+        run: |
+          touch .env
+          echo MONGOURL='mongodb://bwerner:uK4iJLMqnv1yElCkpFUU53loTSljAkj4EtAC4YqMtMW2rZXIOaU9Qsb4CxL9lU3WfYFqec953ZBa1mCNWMQncw==@bwerner.mongo.cosmos.azure.com:10255/primalparty?ssl=true&retrywrites=false&maxIdleTimeMS=120000&appName=@bwerner@' >> .env
+          cat .env
+
       - name: npm install, build, and test
         run: |
           npm install
