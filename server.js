@@ -7,6 +7,10 @@ const mongoose = require('mongoose')
 require('dotenv').config()
 
 
+// .env connections
+const url = process.env.MONGOURL
+
+
 // Database Models
 const User = require('./models/user')
 const Task = require('./models/task')
@@ -23,10 +27,8 @@ app.use(express.urlencoded({extended:true}))
 app.use(express.json())
 
 
-//Connections
-
 //local mongoose connection
-mongoose.connect('mongodb://bwerner:uK4iJLMqnv1yElCkpFUU53loTSljAkj4EtAC4YqMtMW2rZXIOaU9Qsb4CxL9lU3WfYFqec953ZBa1mCNWMQncw==@bwerner.mongo.cosmos.azure.com:10255/?ssl=true&retrywrites=false&maxIdleTimeMS=120000&appName=@bwerner@', {
+mongoose.connect(url, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
