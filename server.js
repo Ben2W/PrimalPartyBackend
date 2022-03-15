@@ -7,6 +7,10 @@ const mongoose = require('mongoose')
 require('dotenv').config()
 
 
+// .env connections
+const url = process.env.MONGOURL
+
+
 // Database Models
 const User = require('./models/user')
 const Task = require('./models/task')
@@ -23,10 +27,8 @@ app.use(express.urlencoded({extended:true}))
 app.use(express.json())
 
 
-//Connections
-
 //local mongoose connection
-mongoose.connect('mongodb://localhost:27017/primalparty', {
+mongoose.connect(url, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
