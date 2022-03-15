@@ -5,8 +5,7 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node .",
-    "startdev": "nodemon server.js"
+    "start": "node ."
   },
   "repository": {
     "type": "git",
@@ -25,7 +24,6 @@
     "express": "^4.17.3",
     "joi": "^17.6.0",
     "joi-objectid": "^4.0.2",
-    "mongoose": "^6.2.6",
-    "nodemon": "^2.0.15"
+    "mongoose": "^6.2.6"
   }
 }
