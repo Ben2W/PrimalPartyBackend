@@ -6,6 +6,16 @@ const cors = require('cors')
 const mongoose = require('mongoose')
 require('dotenv').config()
 
+
+// Database Models
+const User = require('./models/user')
+const Task = require('./models/task')
+const Event = require('./models/event')
+
+//backend schema validators
+//not implemented yet
+const { userSchema, eventSchema, taskSchema } = require('./schemas.js');
+
 // Middleware
 const app = express()
 app.use(cors())
@@ -30,8 +40,8 @@ db.once("open", () => {
 
 //Routes
 
-app.get('/', (req, res)=>{
-    res.send("<h1>Welcome to the Primal Party</h1>")
+app.get('/', async(req, res)=>{
+    res.send("<h1>Welcome to the Primal Party.</h1>")
 })
 
 
