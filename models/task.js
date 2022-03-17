@@ -19,12 +19,12 @@ const TaskSchema = new Schema({
     assignees: {
         type: [Schema.Types.ObjectId],
         ref: 'User',
-        validate: v => Array.isArray(v) && v.length > 0 //to make sure at least one person is assigned the task
+        validate: v => Array.isArray(v) && v.length > 0 //to make sure at least one person is assigned to the task
     },
     done:{
         type:Boolean,
         required:true
     }
-})
+}, {timestamps:true})
 
 module.exports = mongoose.model('Task', TaskSchema);
