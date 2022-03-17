@@ -40,11 +40,12 @@ const EventSchema = new Schema({
             ref: 'Task'
         }
     ]
-})
+}, {timestamps:true})
 
-//every time u run findByIdAndDelete on an instance of an event,
-//remove all the tasks associated with the events
-//remove this event from events of the user
+//every time you run findByIdAndDelete on an instance of an event:
+
+//remove all the tasks associated with the event
+//remove this event from events list of all the users
 
 EventSchema.post('findOneAndDelete', async function(event){
     const {_id} = event

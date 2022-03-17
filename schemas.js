@@ -19,6 +19,7 @@ module.exports.userSchema = Joi.object({
         phone: Joi.string().required().min(12).max(12),
         email: Joi.string().email().required(),
         friends: Joi.array().items(Joi.objectId()),
+        pendingRequests: Joi.array().items(Joi.objectId()),
         events: Joi.array().items(Joi.objectId())
     }).required()
 });
@@ -43,7 +44,7 @@ module.exports.taskSchema = Joi.object({
         event: Joi.objectId().required(),
         name: Joi.string().required().max(30),
         description: Joi.string().max(100),
-        assignees: Joi.array().items(Joi.objectId()),
+        assignees: Joi.array().items(Joi.objectId()).min(1),
         done: Joi.boolean().required()
     }).required()
 })

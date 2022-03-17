@@ -37,18 +37,23 @@ const UserSchema = new Schema({
             ref: 'User'
         }
     ],
+    pendingRequests:[
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'User'
+        }
+    ],
     events:[
         {
             type: Schema.Types.ObjectId,
             ref: 'Event'
         }
-    ]
-})
+    ],
+}, {timestamps:true})
 
-//every time u run findByIdAndDelete on an instance of a user,
+
+//every time u run findByIdAndDelete on an instance of a user:
 //check if that user is admin for some event and if yes, then delete that event
-//also remove this person from friends list of other users
-//also remove this person from assignees list of tasks
 
 UserSchema.post('findOneAndDelete', async function(user){
     const {_id} = user
@@ -56,12 +61,6 @@ UserSchema.post('findOneAndDelete', async function(user){
     if (user.events){
         await Event.findOneAndDelete({admin:_id})
     }
-
-    //do this on the backend side, because you cannot use model before instantiating it
-
-    // if (user.friends){
-    //     await User.updateMany({}, { $pullAll: { friends: [_id]} })
-    // }
 
     await Task.updateMany({}, {$pull: {assignees: _id}})
 })
