@@ -1,5 +1,7 @@
 # Setting up the backend
 
+*Documentation for the this project: [https://spartanfa.github.io/PrimalPartyDocs/#/](https://spartanfa.github.io/PrimalPartyDocs/#/)*
+
 ## Cloning the repository
 
 First, clone the backend repository to your local machine:
