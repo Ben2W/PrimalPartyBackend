@@ -18,8 +18,7 @@ const TaskSchema = new Schema({
     },
     assignees: {
         type: [Schema.Types.ObjectId],
-        ref: 'User',
-        validate: v => Array.isArray(v) && v.length > 0 //to make sure at least one person is assigned to the task
+        ref: 'User'
     },
     done:{
         type:Boolean,
