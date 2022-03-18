@@ -44,7 +44,7 @@ module.exports.taskSchema = Joi.object({
         event: Joi.objectId().required(),
         name: Joi.string().required().max(30),
         description: Joi.string().max(100),
-        assignees: Joi.array().items(Joi.objectId()).min(1),
+        assignees: Joi.array().items(Joi.objectId()),
         done: Joi.boolean().required()
     }).required()
 })
