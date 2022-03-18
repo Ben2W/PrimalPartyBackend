@@ -9,7 +9,7 @@ const User = connection.models.User;
  */
 
  // TODO
- userRouter.post('/login', (req, res, next) => {
+ userRouter.post('/login', passport.authenticate('local'), (req, res, next) => {
 
 
 
@@ -19,7 +19,7 @@ const User = connection.models.User;
  userRouter.post('/register', (req, res, next) => {
 
 
-    
+
  });
 
 

@@ -92,6 +92,8 @@ const validateTask = (req, res, next) => {
         next();
     }
 }
+
+
 ///////////////////////////////////
 //Session Setup
 
@@ -135,12 +137,15 @@ app.use(session({
 
 ///////////////////////////////////
 //Passport Authentication
+
+//We want to reinitialize the passport middleware everytime we load a route: if a session expires or a user logs out it will get caught.
 app.use(passport.initialize());
 app.use(passport.session());
 
 ///////////////////////////////////
 //Routes
 app.use(userRoutes);
+
 app.use(eventRoutes);
 
 
