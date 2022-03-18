@@ -111,18 +111,17 @@ app.post('/DeleteEvent', async(req, res)=>{
 app.post('/CreateEvent', async(req, res)=>{
     const name = req.body.name;
     const description = req.body.description;
-   // const tags = req.body.tags;
+    const tags = req.body.tags;
     const address = req.body.address;
     const date = req.body.date;
     const admin = req.body.admin;
-    //const guests = req.body.guests;
-    //const tasks = req.body.tasks;
+    const guests = req.body.guests;
+    const tasks = req.body.tasks;
 
-    const newEvent = new Event({name : name, description : description});
-    newEvent.save();
+    const newEvent = new Event({name : name, description : description, tags : tags, address : address, date : date, admin : admin, guests : guests, tasks : tasks});
+    await newEvent.save();
     
-
-    //res.send()
+    res.send(200 + "Event successfully created");
 })
 
 
