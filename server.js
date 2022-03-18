@@ -12,6 +12,8 @@ const catchAsync = require('./utils/catchAsync')
 var crypto = require('crypto');
 const session = require('express-session');
 var passport = require('passport');
+const MongoStore = require('connect-mongo')(session);
+require('./config/passport');
 
 
 ///////////////////////////////////
@@ -90,11 +92,54 @@ const validateTask = (req, res, next) => {
         next();
     }
 }
+///////////////////////////////////
+//Session Setup
 
+//@TODO REMOVE THIS LINE
+// Currently, the authentication uses it's own database setup in ./config/database: have it use the same database ASAP
+const connection = require('./config/database');
+
+
+const sessionStore = new MongoStore({ 
+
+    mongooseConnection: connection, 
+    collection: 'session' ,
+
+    /*
+    * Because we are technically not using MongoDB, and using CosmoDB, some functionality is a little different
+    *
+    * _ts is a CosmosDB specific field to determine the time expired, we don't have access to that since we are writing in "MongoCode"
+    * 
+    * So for us to implement time expired we have to do it a little unoptimally here source: (https://stackoverflow.com/questions/59638751/the-expireafterseconds-option-is-supported-on-ts-field-only-error-is-s)
+    * 
+    */
+
+    ttl: 24 * 60 * 60 * 1000,
+    autoRemove: 'interval',
+    autoRemoveInterval: 10 // Value in minutes (default is 10)
+
+});
+
+
+app.use(session({
+
+    secret: process.env.SECRET,
+    resave: false,
+    saveUninitialized: true,
+    store: sessionStore,
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 24 //Equals 1 day
+    }
+
+}))
+
+///////////////////////////////////
+//Passport Authentication
+app.use(passport.initialize());
+app.use(passport.session());
 
 ///////////////////////////////////
 //Routes
-
 app.use(userRoutes);
 app.use(eventRoutes);
 
