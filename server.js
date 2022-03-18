@@ -100,20 +100,13 @@ app.get('/events/:eventId', catchAsync(async(req, res) => {
 	const { eventId } = req.params;
 	const currEvent = await Event.findById(eventId)
 	
-	res.json({
-		name: currEvent.name,
-		description: currEvent.description,
-		tags: currEvent.tags,
-		address: currEvent.address,
-		date: currEvent.date,
-		admin: currEvent.admin
-	})
+	res.json({ currEvent });
 }))
 
 // GET	/events/:eventId/guests	View the guests of a specific event
 app.get('/events/:eventId/guests', catchAsync(async(req, res) => {
 	const { eventId } = req.params;
-	const currEvent = await Event.findById(eventId)
+	const currEvent = await Event.findById(eventId).populate('guests')
 	
 	res.json({guests: currEvent.guests});
 }))
@@ -121,7 +114,7 @@ app.get('/events/:eventId/guests', catchAsync(async(req, res) => {
 // GET	/events/:eventId/tasks	View the tasks of a specific event
 app.get('/events/:eventId/tasks', catchAsync(async(req, res) => {
 	const { eventId } = req.params;
-	const currEvent = await Event.findById(eventId)
+	const currEvent = await Event.findById(eventId).populate('tasks')
 	
 	res.json({tasks: currEvent.tasks});
 }))
@@ -131,12 +124,7 @@ app.get('/events/:eventId/tasks/:taskId', catchAsync(async(req, res) => {
 	const { taskId } = req.params;
 	const currTask = await Task.findById(taskId)
 	
-	res.json({
-		name: currTask.name,
-		description: currTask.description,
-		assignees: currTask.assignees,
-		done: currTask.done
-	})
+	res.json({ currTask });
 }))
 
 //YOUR ENDPOINTS GO HERE. ORDER OF ROUTES IN EXPRESS MATTERS!!!!!! 
