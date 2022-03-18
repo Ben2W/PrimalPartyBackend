@@ -91,6 +91,23 @@ app.get('/', async(req, res)=>{
 //YOUR ENDPOINTS GO HERE. ORDER OF ROUTES IN EXPRESS MATTERS!!!!!! 
 //YOUR ROUTE MIGHT NOT WORK JUST BECAUSE IT IS NOT IN THE CORRECT PLACE IN THE FILE
 
+//Deletes an event based on the event $oid
+app.post('/DeleteEvent', async(req, res)=>{
+   await Event.findOneAndDelete(req.body.eventID);
+    /*const eventID = req.body.eventID;
+    const query = await Event.findOneAndDelete({ $oid : eventID});
+
+    if(!query.length){ 
+        throw new Error('Event not found');
+        return;
+        }
+    
+    console.log(JSON.stringify(query));
+    res.json(query);
+    */
+});
+
+
 
 ///////////////////////////////////
 //Error endpoints
