@@ -86,7 +86,58 @@ app.get('/', async(req, res)=>{
     res.send("<h1>Welcome to the Primal Party.</h1>")
 })
 
+// GET	/events	View the events user created/got invited to 
+app.get('/events', catchAsync(async(req, res) => {
+	//const { adminId } = req.params;
+	//const events = await Event.find({ admin: adminId})
+	const events = await Event.find({})
+	
+	res.json( { events } )
+}))
 
+// GET	/events/:eventId View the details of a specific event
+app.get('/events/:eventId', catchAsync(async(req, res) => {
+	const { eventId } = req.params;
+	const currEvent = await Event.findById(eventId)
+	
+	res.json({
+		name: currEvent.name,
+		description: currEvent.description,
+		tags: currEvent.tags,
+		address: currEvent.address,
+		date: currEvent.date,
+		admin: currEvent.admin
+	})
+}))
+
+// GET	/events/:eventId/guests	View the guests of a specific event
+app.get('/events/:eventId/guests', catchAsync(async(req, res) => {
+	const { eventId } = req.params;
+	const currEvent = await Event.findById(eventId)
+	
+	res.json({guests: currEvent.guests});
+}))
+
+// GET	/events/:eventId/tasks	View the tasks of a specific event
+app.get('/events/:eventId/tasks', catchAsync(async(req, res) => {
+	const { eventId } = req.params;
+	const currEvent = await Event.findById(eventId)
+	
+	res.json({tasks: currEvent.tasks});
+}))
+
+// GET	/events/:eventId/tasks/:taskId	View the details of a particular task
+app.get('/events/:eventId/tasks/:taskId', catchAsync(async(req, res) => {
+	const { taskId } = req.params;
+	const currTask = await Task.findById(taskId)
+	
+	res.json({
+		name: currTask.name,
+		description: currTask.description,
+		assignees: currTask.assignees,
+		done: currTask.done
+	})
+}))
 
 //YOUR ENDPOINTS GO HERE. ORDER OF ROUTES IN EXPRESS MATTERS!!!!!! 
 //YOUR ROUTE MIGHT NOT WORK JUST BECAUSE IT IS NOT IN THE CORRECT PLACE IN THE FILE
