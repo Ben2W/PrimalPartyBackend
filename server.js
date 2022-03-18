@@ -7,6 +7,12 @@ const mongoose = require('mongoose')
 const AppError = require('./utils/AppError')
 const catchAsync = require('./utils/catchAsync')
 
+///////////////////////////////////
+// Requirements and dependencies for passport
+var crypto = require('crypto');
+const session = require('express-session');
+var passport = require('passport');
+
 
 ///////////////////////////////////
 // Declaring route modules
@@ -88,10 +94,8 @@ const validateTask = (req, res, next) => {
 
 ///////////////////////////////////
 //Routes
-app.get('/', async(req, res)=>{
-    res.send("<h1>Welcome to the Primal Party.</h1>")
-})
 
+app.use(userRoutes);
 app.use(eventRoutes);
 
 
