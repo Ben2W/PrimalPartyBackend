@@ -12,6 +12,7 @@ const catchAsync = require('./utils/catchAsync')
 // Declaring route modules
 var eventRoutes = require('./routes/eventRoutes');
 var userRoutes = require('./routes/userRoutes');
+var errorRoutes = require('./routes/errorRoutes');
 
 
 ///////////////////////////////////
@@ -87,7 +88,6 @@ const validateTask = (req, res, next) => {
 
 ///////////////////////////////////
 //Routes
-
 app.get('/', async(req, res)=>{
     res.send("<h1>Welcome to the Primal Party.</h1>")
 })
@@ -97,16 +97,7 @@ app.use(eventRoutes);
 
 ///////////////////////////////////
 //Error endpoints
-
-app.all('*', (req, res, next) => {
-    next(new AppError('API endpoint is non-existent', 404))
-})
-
-app.use((err, req, res, next) => {
-    const { statusCode = 500 } = err;
-    if (!err.message) err.message = 'Oh No, Something Went Wrong!'
-    res.status(statusCode).json({'error' : err })
-})
+app.use(errorRoutes);
 
 ///////////////////////////////////
 //starting the server
