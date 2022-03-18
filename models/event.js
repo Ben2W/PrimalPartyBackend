@@ -26,7 +26,7 @@ const EventSchema = new Schema({
     admin:{
         type: Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        //required: true
     },
     guests:[
         {

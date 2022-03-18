@@ -108,6 +108,23 @@ app.post('/DeleteEvent', async(req, res)=>{
 });
 
 
+app.post('/CreateEvent', async(req, res)=>{
+    const name = req.body.name;
+    const description = req.body.description;
+   // const tags = req.body.tags;
+    const address = req.body.address;
+    const date = req.body.date;
+    const admin = req.body.admin;
+    //const guests = req.body.guests;
+    //const tasks = req.body.tasks;
+
+    const newEvent = new Event({name : name, description : description});
+    newEvent.save();
+    
+
+    //res.send()
+})
+
 
 ///////////////////////////////////
 //Error endpoints
