@@ -95,7 +95,6 @@ app.get('/', async(req, res)=>{
 app.post('/events', catchAsync(async(req, res)=>{
 
     const {name, description, tags, address, date, admin, guests, tasks} = req.body;
-
     const newEvent = new Event({name : name, description : description, tags : tags, address : address, date : date, admin : admin, guests : guests, tasks : tasks});
     await newEvent.save();
     
@@ -108,7 +107,6 @@ app.post('/events', catchAsync(async(req, res)=>{
 app.post('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=>{
 
     const {eventId, guestId} = req.params;
-
     const event = await Event.findById(eventId);
     
     if(event.guests.indexOf(guestId) != -1)
@@ -126,9 +124,7 @@ app.post('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=>{
 app.delete('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=>{
 
     const {eventId, guestId} = req.params;
-
     const event = await Event.findById(eventId);
-
     const guestIndex = event.guests.indexOf(guestId);
     
     if(guestIndex == -1)
@@ -146,9 +142,7 @@ app.delete('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=>{
 app.delete('/events/:eventId/tasks/:taskId', catchAsync(async(req, res)=>{
 
     const {eventId, taskId} = req.params;
-
     const event = await Event.findById(eventId);
-
     const taskIndex = event.tasks.indexOf(taskId);
     
     if(taskIndex == -1)
