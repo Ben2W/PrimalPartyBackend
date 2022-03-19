@@ -21,13 +21,19 @@ function generateToken() {
 }
 
 
-emailRouter.post('/forgot', catchAsync(async(req, res, next) => {
+emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     if(req.isAuthenticated()){
         return res.json({status: 'ERROR: you are already logged in'});
     } 
-    token = generateToken();
-    //const currEvent = await User.findById(eventId).populate('tasks')
-    res.json({emai: 'bewerner23@gmail.com'});
+
+    token = generateToken().toString();
+    email = req.body.email;
+
+
+    //@TODO: in the User Schema, keep track of when a resetToken was generated. To limit users from reseting passwords. IE: If a token was generated 10 seconds ago, deny this forgot password request.
+    const user = await User.findOneAndUpdate({email: email, resetToken: token});
+    console.log(user);
+    res.json({token: token});
 })); 
 
 
