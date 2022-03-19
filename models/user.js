@@ -58,7 +58,7 @@ UserSchema.post('findOneAndDelete', async function(user){
     const {_id} = user
 
     if (user.events){
-        await Event.findOneAndDelete({admin:_id})
+        await Event.deleteMany({admin:_id})
     }
 
     await Task.updateMany({}, {$pull: {assignees: _id}})

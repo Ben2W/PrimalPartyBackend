@@ -1,62 +1,49 @@
 const userRouter = require('express').Router();
-const passport = require('passport');
 const User = require('../models/user')
+const passport = require('passport');
 
-const {isLoggedIn} = require('../middleware')
 const catchAsync = require('../utils/catchAsync');
+const {isLoggedIn} = require('../middleware.js')
+const AppError =  require('../utils/AppError')
 
 
-
-
-/**
- * -------------- POST ROUTES ----------------
- */
-
- // TODO
- userRouter.post('/login', passport.authenticate('local'), (req, res, next) => {
-
-
-
- });
-
- // TODO
  userRouter.post('/register', catchAsync(async(req, res, next) => {
-
     try {
         
-        const {password} = req.body
-        const user = new User(req.body);
+        const {password, ...rest} = req.body
+        const user = new User(rest);
         const registeredUser = await User.register(user, password);
         req.login(registeredUser, err => {
-            if (err) return next(err);
-            res.send('yay')
+            if (err) {
+                return res.status(500).json({error: 'there has been an issue creating an account'})
+            }
+            res.status(200).json({error:''})
             
         })
     } catch (e) {
-        res.send(e)
+        return res.status(500).json({error: 'there has been an issue creating an account'})
     }
- }));
+ }))
 
- userRouter.post('/login', passport.authenticate('local', { failureFlash: true, failureRedirect: '/login' }), (req, res) => {
-    res.send('authenticated')
+userRouter.post('/login', (req, res, next) => {
+  passport.authenticate('local', function(err, user, info) {
+    if (err) { res.json({error:'error happened when logging in'}) }
+    if (!user) { res.json({error:'error happened when logging in'}) }
+    req.logIn(user, function(err) {
+      if (err) { res.json({error:'login failed'}) }
+      res.json({error:''})
+    });
+  })(req, res, next);
+});
+
+
+userRouter.post('/logout', isLoggedIn, (req,res)=>{
+    try{
+        req.logout()
+        res.status(200).json({error:''})
+    }catch(e){
+        throw new AppError(e,500)
+    }
 })
-
-
-
- /**
- * -------------- GET ROUTES ----------------
- */
-
-
-userRouter.get('/protected', isLoggedIn, (req,res)=>{
-    console.log(req.user)
-    res.send("This is a protected route, if u made it here means u r logged in")
-})
-
-userRouter.get('/logout', (req,res)=>{
-    req.logout()
-    res.send("bye bye")
-})
-
 
 module.exports = userRouter;
