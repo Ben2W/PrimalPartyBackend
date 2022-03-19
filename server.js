@@ -186,7 +186,7 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-=======
+
 //Create a new event
 app.post('/events', catchAsync(async(req, res)=>{
 
