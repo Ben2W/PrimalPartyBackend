@@ -118,7 +118,45 @@ const sessionStore = new MongoStore({
 
 });
 
+app.get('/events', catchAsync(async(req, res) => {
+	//const { adminId } = req.params;
+	//const events = await Event.find({ admin: adminId})
+	const events = await Event.find({})
+	
+	res.json( { events } )
+}))
 
+// GET	/events/:eventId View the details of a specific event
+app.get('/events/:eventId', catchAsync(async(req, res) => {
+	const { eventId } = req.params;
+	const currEvent = await Event.findById(eventId)
+	
+	res.json({ currEvent });
+}))
+
+// GET	/events/:eventId/guests	View the guests of a specific event
+app.get('/events/:eventId/guests', catchAsync(async(req, res) => {
+	const { eventId } = req.params;
+	const currEvent = await Event.findById(eventId).populate('guests')
+	
+	res.json({guests: currEvent.guests});
+}))
+
+// GET	/events/:eventId/tasks	View the tasks of a specific event
+app.get('/events/:eventId/tasks', catchAsync(async(req, res) => {
+	const { eventId } = req.params;
+	const currEvent = await Event.findById(eventId).populate('tasks')
+	
+	res.json({tasks: currEvent.tasks});
+}))
+
+// GET	/events/:eventId/tasks/:taskId	View the details of a particular task
+app.get('/events/:eventId/tasks/:taskId', catchAsync(async(req, res) => {
+	const { taskId } = req.params;
+	const currTask = await Task.findById(taskId)
+	
+	res.json({ currTask });
+}))
 app.use(session({
 
     secret: process.env.SECRET,
