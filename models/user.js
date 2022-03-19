@@ -14,11 +14,7 @@ const UserSchema = new Schema({
         type:String,
         required:true
     },
-    login:{
-        type:String,
-        required:true
-    },
-    password:{
+    username:{
         type:String,
         required:true
     },
@@ -69,4 +65,3 @@ UserSchema.post('findOneAndDelete', async function(user){
 })
 
 module.exports = mongoose.model('User', UserSchema);
-

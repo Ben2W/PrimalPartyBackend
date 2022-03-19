@@ -14,8 +14,7 @@ module.exports.userSchema = Joi.object({
     user: Joi.object({
         firstName: Joi.string().required(),
         lastName: Joi.string().required(),
-        login: Joi.string().required(),
-        password: Joi.string().required(),
+        username: Joi.string().required(),
         phone: Joi.string().required().min(12).max(12),
         email: Joi.string().email().required(),
         friends: Joi.array().items(Joi.objectId()),

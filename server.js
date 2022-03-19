@@ -9,11 +9,14 @@ const catchAsync = require('./utils/catchAsync')
 
 ///////////////////////////////////
 // Requirements and dependencies for passport
-var crypto = require('crypto');
+var crypto = require('crypto'); // @TODO REMOVE THIS LINE
 const session = require('express-session');
+
 var passport = require('passport');
+const LocalStrategy = require('passport-local');
+
 const MongoStore = require('connect-mongo')(session);
-require('./config/passport');
+//const {isLoggedIn} = require('./middleware') @TODO ADD THIS LINE
 
 
 ///////////////////////////////////
@@ -99,12 +102,11 @@ const validateTask = (req, res, next) => {
 
 //@TODO REMOVE THIS LINE
 // Currently, the authentication uses it's own database setup in ./config/database: have it use the same database ASAP
-const connection = require('./config/database');
 
 
 const sessionStore = new MongoStore({ 
 
-    mongooseConnection: connection, 
+    mongooseConnection: db, 
     collection: 'session' ,
 
     /*
@@ -130,9 +132,10 @@ app.use(session({
     saveUninitialized: true,
     store: sessionStore,
     cookie: {
+        httpOnly: true,
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
         maxAge: 1000 * 60 * 60 * 24 //Equals 1 day
     }
-
 }))
 
 ///////////////////////////////////
@@ -142,8 +145,23 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+passport.use(new LocalStrategy(User.authenticate()));
+
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+
+
 ///////////////////////////////////
 //Routes
+
+// @TODO ask emin what this does
+//
+// app.use((req, res, next) => {
+//     res.locals.currentUser = req.user;
+//     next();
+// })
+
 app.use(userRoutes);
 
 app.use(eventRoutes);
