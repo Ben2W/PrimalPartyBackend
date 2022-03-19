@@ -100,9 +100,9 @@ const validateTask = (req, res, next) => {
 
 const sessionStore = new MongoStore({ 
 
+
     mongooseConnection: db, 
     collection: 'session' ,
-
     /*
     * Because we are technically not using MongoDB, and using CosmoDB, some functionality is a little different
     *
@@ -117,6 +117,48 @@ const sessionStore = new MongoStore({
     autoRemoveInterval: 10 // Value in minutes (default is 10)
 
 });
+
+
+// GET	/events	View the events user created/got invited to 
+app.get('/events', catchAsync(async(req, res) => {
+	//const { adminId } = req.params;
+	//const events = await Event.find({ admin: adminId})
+	const events = await Event.find({})
+	
+	res.json( { events } )
+}))
+
+// GET	/events/:eventId View the details of a specific event
+app.get('/events/:eventId', catchAsync(async(req, res) => {
+	const { eventId } = req.params;
+	const currEvent = await Event.findById(eventId)
+	
+	res.json({ currEvent });
+}))
+
+// GET	/events/:eventId/guests	View the guests of a specific event
+app.get('/events/:eventId/guests', catchAsync(async(req, res) => {
+	const { eventId } = req.params;
+	const currEvent = await Event.findById(eventId).populate('guests')
+	
+	res.json({guests: currEvent.guests});
+}))
+
+// GET	/events/:eventId/tasks	View the tasks of a specific event
+app.get('/events/:eventId/tasks', catchAsync(async(req, res) => {
+	const { eventId } = req.params;
+	const currEvent = await Event.findById(eventId).populate('tasks')
+	
+	res.json({tasks: currEvent.tasks});
+}))
+
+// GET	/events/:eventId/tasks/:taskId	View the details of a particular task
+app.get('/events/:eventId/tasks/:taskId', catchAsync(async(req, res) => {
+	const { taskId } = req.params;
+	const currTask = await Task.findById(taskId)
+	
+	res.json({ currTask });
+}))
 
 
 app.use(session({
@@ -144,6 +186,70 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
+=======
+//Create a new event
+app.post('/events', catchAsync(async(req, res)=>{
+
+    const {name, description, tags, address, date, admin, guests, tasks} = req.body;
+    const newEvent = new Event({name : name, description : description, tags : tags, address : address, date : date, admin : admin, guests : guests, tasks : tasks});
+    await newEvent.save();
+    
+    res.json(200);
+}))
+
+
+//Add a guest to an event
+//Checks if the guest is already in the event and adds them if not
+app.post('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=>{
+
+    const {eventId, guestId} = req.params;
+    const event = await Event.findById(eventId);
+    
+    if(event.guests.indexOf(guestId) != -1)
+    { 
+        throw new AppError ("Guest already found in guest list", 300);
+    };
+
+    event.guests.push(guestId);
+    event.save();
+    res.json(200);
+}))
+
+//Delete a guest from an event
+//Checks if the guest is in the list and deletes it based on index if so
+app.delete('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=>{
+
+    const {eventId, guestId} = req.params;
+    const event = await Event.findById(eventId);
+    const guestIndex = event.guests.indexOf(guestId);
+    
+    if(guestIndex == -1)
+    { 
+        throw new AppError ("Guest not found", 300);
+    };
+
+    event.guests.splice(guestIndex, 1);
+    event.save();
+    res.json(200);
+}))
+
+//Delete a task from an event
+//Checks if the task is in the list and deletes it based on index if so
+app.delete('/events/:eventId/tasks/:taskId', catchAsync(async(req, res)=>{
+
+    const {eventId, taskId} = req.params;
+    const event = await Event.findById(eventId);
+    const taskIndex = event.tasks.indexOf(taskId);
+    
+    if(taskIndex == -1)
+    { 
+        throw new AppError ("task not found", 300);
+    };
+
+    event.tasks.splice(taskIndex, 1);
+    event.save();
+    res.json(200);
+}))
 
 
 ///////////////////////////////////
