@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const Schema = mongoose.Schema
+const passportLocalMongoose = require('passport-local-mongoose');
 
 const Event = require('./event')
 const Task = require('./task')
@@ -13,11 +14,7 @@ const UserSchema = new Schema({
         type:String,
         required:true
     },
-    login:{
-        type:String,
-        required:true
-    },
-    password:{
+    username:{
         type:String,
         required:true
     },
@@ -52,6 +49,8 @@ const UserSchema = new Schema({
 }, {timestamps:true})
 
 
+UserSchema.plugin(passportLocalMongoose);
+
 //every time u run findByIdAndDelete on an instance of a user:
 //check if that user is admin for some event and if yes, then delete that event
 
@@ -66,4 +65,3 @@ UserSchema.post('findOneAndDelete', async function(user){
 })
 
 module.exports = mongoose.model('User', UserSchema);
-

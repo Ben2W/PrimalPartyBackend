@@ -1,16 +1,28 @@
 ///////////////////////////////////
 // Requirements and dependencies
 const express = require('express')
+const session = require('express-session');
 const path = require('path')
 const cors = require('cors')
 const mongoose = require('mongoose')
-require('dotenv').config()
 const AppError = require('./utils/AppError')
 const catchAsync = require('./utils/catchAsync')
+var passport = require('passport');
+const LocalStrategy = require('passport-local');
+const MongoStore = require('connect-mongo')(session);
+//const {isLoggedIn} = require('./middleware') @TODO ADD THIS LINE
+
+
+///////////////////////////////////
+// Declaring route modules
+var eventRoutes = require('./routes/eventRoutes');
+var userRoutes = require('./routes/userRoutes');
+var errorRoutes = require('./routes/errorRoutes');
 
 
 ///////////////////////////////////
 // .env connections
+require('dotenv').config()
 const url = process.env.MONGOURL
 
 
@@ -80,11 +92,32 @@ const validateTask = (req, res, next) => {
 
 
 ///////////////////////////////////
-//Routes
+//Session Setup
 
-app.get('/', async(req, res)=>{
-    res.send("<h1>Welcome to the Primal Party.</h1>")
-})
+//@TODO REMOVE THIS LINE
+// Currently, the authentication uses it's own database setup in ./config/database: have it use the same database ASAP
+
+
+const sessionStore = new MongoStore({ 
+
+
+    mongooseConnection: db, 
+    collection: 'session' ,
+    /*
+    * Because we are technically not using MongoDB, and using CosmoDB, some functionality is a little different
+    *
+    * _ts is a CosmosDB specific field to determine the time expired, we don't have access to that since we are writing in "MongoCode"
+    * 
+    * So for us to implement time expired we have to do it a little unoptimally here source: (https://stackoverflow.com/questions/59638751/the-expireafterseconds-option-is-supported-on-ts-field-only-error-is-s)
+    * 
+    */
+
+    ttl: 24 * 60 * 60 * 1000,
+    autoRemove: 'interval',
+    autoRemoveInterval: 10 // Value in minutes (default is 10)
+
+});
+
 
 // GET	/events	View the events user created/got invited to 
 app.get('/events', catchAsync(async(req, res) => {
@@ -127,9 +160,33 @@ app.get('/events/:eventId/tasks/:taskId', catchAsync(async(req, res) => {
 	res.json({ currTask });
 }))
 
-//YOUR ENDPOINTS GO HERE. ORDER OF ROUTES IN EXPRESS MATTERS!!!!!! 
-//YOUR ROUTE MIGHT NOT WORK JUST BECAUSE IT IS NOT IN THE CORRECT PLACE IN THE FILE
 
+app.use(session({
+
+    secret: process.env.SECRET,
+    resave: false,
+    saveUninitialized: true,
+    store: sessionStore,
+    cookie: {
+        httpOnly: true,
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
+        maxAge: 1000 * 60 * 60 * 24 //Equals 1 day
+    }
+}))
+
+///////////////////////////////////
+//Passport Authentication
+
+//We want to reinitialize the passport middleware everytime we load a route: if a session expires or a user logs out it will get caught.
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.use(new LocalStrategy(User.authenticate()));
+
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+=======
 //Create a new event
 app.post('/events', catchAsync(async(req, res)=>{
 
@@ -196,17 +253,21 @@ app.delete('/events/:eventId/tasks/:taskId', catchAsync(async(req, res)=>{
 
 
 ///////////////////////////////////
+//Routes
+
+app.use((req, res, next) => {
+    res.locals.currentUser = req.user;
+    next();
+})
+
+app.use(userRoutes);
+
+app.use(eventRoutes);
+
+
+///////////////////////////////////
 //Error endpoints
-
-app.all('*', (req, res, next) => {
-    next(new AppError('API endpoint is non-existent', 404))
-})
-
-app.use((err, req, res, next) => {
-    const { statusCode = 500 } = err;
-    if (!err.message) err.message = 'Oh No, Something Went Wrong!'
-    res.status(statusCode).json({'error' : err })
-})
+app.use(errorRoutes);
 
 ///////////////////////////////////
 //starting the server
