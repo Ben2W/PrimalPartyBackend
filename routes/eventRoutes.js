@@ -3,44 +3,119 @@ const User = require('../models/user')
 const Task = require('../models/task')
 const Event = require('../models/event')
 
+const { userSchema, eventSchema, taskSchema } = require('../schemas.js');
+const catchAsync = require('../utils/catchAsync')
+const {isLoggedIn, isAdmin, isInvited} = require('../middleware') 
 
 
 
-//YOUR ENDPOINTS GO HERE. ORDER OF ROUTES IN EXPRESS MATTERS!!!!!! 
-//YOUR ROUTE MIGHT NOT WORK JUST BECAUSE IT IS NOT IN THE CORRECT PLACE IN THE FILE
+// View the events user created/got invited to 
+eventRouter.get('/events', isLoggedIn, isInvited, catchAsync(async(req, res) => {
+	const id = req.user._id
+	const events = await Event.find({$or: [ {admin:id}, {guests:id}]})
+	res.json({ events })
+}))
 
-//Deletes an event based on the event $oid
-eventRouter.post('/DeleteEvent', async(req, res)=>{
-   await Event.findOneAndDelete(req.body.eventID);
-    /*const eventID = req.body.eventID;
-    const query = await Event.findOneAndDelete({ $oid : eventID});
+// View the details of a specific event
+eventRouter.get('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(req, res) => {
+	const { eventId } = req.params;
+	const currEvent = await Event.findById(eventId).populate('guests').populate('tasks')
+	res.json({ currEvent });
+}))
 
-    if(!query.length){ 
-        throw new Error('Event not found');
-        return;
-        }
+// View the guests of a specific event
+eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(async(req, res) => {
+	const { eventId } = req.params;
+	const currEvent = await Event.findById(eventId).populate('guests')
+	res.json({guests: currEvent.guests});
+}))
+
+
+//needs repopulation
+// View the tasks of a specific event
+eventRouter.get('/events/:eventId/tasks', isLoggedIn, catchAsync(async(req, res) => {
+	const { eventId } = req.params;
+	const currEvent = await Event.findById(eventId).populate('tasks')
+
+    //fill in the tasks here
+
+	res.json({tasks: currEvent.tasks});
+}))
+
+// View the details of a particular task
+eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, catchAsync(async(req, res) => {
+	const { taskId } = req.params;
+	const currTask = await Task.findById(taskId).populate('assignees')
+	
+	res.json({ currTask });
+}))
+
+
+
+
+
+// //Create a new event
+// app.post('/events', catchAsync(async(req, res)=>{
+
+//     const {name, description, tags, address, date, admin, guests, tasks} = req.body;
+//     const newEvent = new Event({name : name, description : description, tags : tags, address : address, date : date, admin : admin, guests : guests, tasks : tasks});
+//     await newEvent.save();
     
-    console.log(JSON.stringify(query));
-    res.json(query);
-    */
-});
+//     res.json(200);
+// }))
 
 
-eventRouter.post('/CreateEvent', async(req, res)=>{
-    const name = req.body.name;
-    const description = req.body.description;
-   // const tags = req.body.tags;
-    const address = req.body.address;
-    const date = req.body.date;
-    const admin = req.body.admin;
-    //const guests = req.body.guests;
-    //const tasks = req.body.tasks;
+// //Add a guest to an event
+// //Checks if the guest is already in the event and adds them if not
+// app.post('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=>{
 
-    const newEvent = new Event({name : "POOP", description : "POOP", address : "POOP", date: "POOP"});
-    newEvent.save();
+//     const {eventId, guestId} = req.params;
+//     const event = await Event.findById(eventId);
     
+//     if(event.guests.indexOf(guestId) != -1)
+//     { 
+//         throw new AppError ("Guest already found in guest list", 300);
+//     };
 
-    res.send()
-})
+//     event.guests.push(guestId);
+//     event.save();
+//     res.json(200);
+// }))
+
+// //Delete a guest from an event
+// //Checks if the guest is in the list and deletes it based on index if so
+// app.delete('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=>{
+
+//     const {eventId, guestId} = req.params;
+//     const event = await Event.findById(eventId);
+//     const guestIndex = event.guests.indexOf(guestId);
+    
+//     if(guestIndex == -1)
+//     { 
+//         throw new AppError ("Guest not found", 300);
+//     };
+
+//     event.guests.splice(guestIndex, 1);
+//     event.save();
+//     res.json(200);
+// }))
+
+// //Delete a task from an event
+// //Checks if the task is in the list and deletes it based on index if so
+// app.delete('/events/:eventId/tasks/:taskId', catchAsync(async(req, res)=>{
+
+//     const {eventId, taskId} = req.params;
+//     const event = await Event.findById(eventId);
+//     const taskIndex = event.tasks.indexOf(taskId);
+    
+//     if(taskIndex == -1)
+//     { 
+//         throw new AppError ("task not found", 300);
+//     };
+
+//     event.tasks.splice(taskIndex, 1);
+//     event.save();
+//     res.json(200);
+// }))
 
 module.exports = eventRouter;

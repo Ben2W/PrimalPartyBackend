@@ -2,28 +2,32 @@
 // Requirements and dependencies
 const express = require('express')
 const session = require('express-session');
-const path = require('path')
 const cors = require('cors')
 const mongoose = require('mongoose')
-const AppError = require('./utils/AppError')
-const catchAsync = require('./utils/catchAsync')
-var passport = require('passport');
+
+const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const MongoStore = require('connect-mongo')(session);
-//const {isLoggedIn} = require('./middleware') @TODO ADD THIS LINE
 
 
 ///////////////////////////////////
-// Declaring route modules
-var eventRoutes = require('./routes/eventRoutes');
-var userRoutes = require('./routes/userRoutes');
-var errorRoutes = require('./routes/errorRoutes');
+// Utilities
+const AppError = require('./utils/AppError')
+const catchAsync = require('./utils/catchAsync')
+
+
+///////////////////////////////////
+// Declaring routers
+const eventRoutes = require('./routes/eventRoutes');
+const userRoutes = require('./routes/userRoutes');
+const errorRoutes = require('./routes/errorRoutes');
 
 
 ///////////////////////////////////
 // .env connections
 require('dotenv').config()
 const url = process.env.MONGOURL
+const secret = process.env.SECRET
 
 
 ///////////////////////////////////
@@ -39,10 +43,18 @@ const { userSchema, eventSchema, taskSchema } = require('./schemas.js');
 
 ///////////////////////////////////
 // Middleware
+const {isLoggedIn, isAdmin} = require('./middleware') 
 const app = express()
 app.use(cors())
 app.use(express.urlencoded({extended:true}))
 app.use(express.json())
+
+
+// middleware to have access to current user in every request
+app.use((req, res, next) => {
+    res.locals.currentUser = req.user;
+    next();
+})
 
 ///////////////////////////////////
 //remote mongoose connection
@@ -57,44 +69,9 @@ db.once("open", () => {
     console.log("Database connected");
 });
 
-
-///////////////////////////////////
-//backend data entry validators
-const validateEvent = (req, res, next) => {
-    const { error } = eventSchema.validate(req.body);
-    if (error) {
-        const msg = error.details.map(el => el.message).join(',')
-        throw new AppError(msg, 400)
-    } else {
-        next();
-    }
-}
-
-const validateUser = (req, res, next) => {
-    const { error } = userSchema.validate(req.body);
-    if (error) {
-        const msg = error.details.map(el => el.message).join(',')
-        throw new AppError(msg, 400)
-    } else {
-        next();
-    }
-}
-
-const validateTask = (req, res, next) => {
-    const { error } = taskSchema.validate(req.body);
-    if (error) {
-        const msg = error.details.map(el => el.message).join(',')
-        throw new AppError(msg, 400)
-    } else {
-        next();
-    }
-}
-
-
 ///////////////////////////////////
 //Session Setup
 
-//@TODO REMOVE THIS LINE
 // Currently, the authentication uses it's own database setup in ./config/database: have it use the same database ASAP
 
 
@@ -117,49 +94,6 @@ const sessionStore = new MongoStore({
     autoRemoveInterval: 10 // Value in minutes (default is 10)
 
 });
-
-
-// GET	/events	View the events user created/got invited to 
-app.get('/events', catchAsync(async(req, res) => {
-	//const { adminId } = req.params;
-	//const events = await Event.find({ admin: adminId})
-	const events = await Event.find({})
-	
-	res.json( { events } )
-}))
-
-// GET	/events/:eventId View the details of a specific event
-app.get('/events/:eventId', catchAsync(async(req, res) => {
-	const { eventId } = req.params;
-	const currEvent = await Event.findById(eventId)
-	
-	res.json({ currEvent });
-}))
-
-// GET	/events/:eventId/guests	View the guests of a specific event
-app.get('/events/:eventId/guests', catchAsync(async(req, res) => {
-	const { eventId } = req.params;
-	const currEvent = await Event.findById(eventId).populate('guests')
-	
-	res.json({guests: currEvent.guests});
-}))
-
-// GET	/events/:eventId/tasks	View the tasks of a specific event
-app.get('/events/:eventId/tasks', catchAsync(async(req, res) => {
-	const { eventId } = req.params;
-	const currEvent = await Event.findById(eventId).populate('tasks')
-	
-	res.json({tasks: currEvent.tasks});
-}))
-
-// GET	/events/:eventId/tasks/:taskId	View the details of a particular task
-app.get('/events/:eventId/tasks/:taskId', catchAsync(async(req, res) => {
-	const { taskId } = req.params;
-	const currTask = await Task.findById(taskId)
-	
-	res.json({ currTask });
-}))
-
 
 app.use(session({
 
@@ -187,86 +121,13 @@ passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
 
-//Create a new event
-app.post('/events', catchAsync(async(req, res)=>{
-
-    const {name, description, tags, address, date, admin, guests, tasks} = req.body;
-    const newEvent = new Event({name : name, description : description, tags : tags, address : address, date : date, admin : admin, guests : guests, tasks : tasks});
-    await newEvent.save();
-    
-    res.json(200);
-}))
-
-
-//Add a guest to an event
-//Checks if the guest is already in the event and adds them if not
-app.post('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=>{
-
-    const {eventId, guestId} = req.params;
-    const event = await Event.findById(eventId);
-    
-    if(event.guests.indexOf(guestId) != -1)
-    { 
-        throw new AppError ("Guest already found in guest list", 300);
-    };
-
-    event.guests.push(guestId);
-    event.save();
-    res.json(200);
-}))
-
-//Delete a guest from an event
-//Checks if the guest is in the list and deletes it based on index if so
-app.delete('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=>{
-
-    const {eventId, guestId} = req.params;
-    const event = await Event.findById(eventId);
-    const guestIndex = event.guests.indexOf(guestId);
-    
-    if(guestIndex == -1)
-    { 
-        throw new AppError ("Guest not found", 300);
-    };
-
-    event.guests.splice(guestIndex, 1);
-    event.save();
-    res.json(200);
-}))
-
-//Delete a task from an event
-//Checks if the task is in the list and deletes it based on index if so
-app.delete('/events/:eventId/tasks/:taskId', catchAsync(async(req, res)=>{
-
-    const {eventId, taskId} = req.params;
-    const event = await Event.findById(eventId);
-    const taskIndex = event.tasks.indexOf(taskId);
-    
-    if(taskIndex == -1)
-    { 
-        throw new AppError ("task not found", 300);
-    };
-
-    event.tasks.splice(taskIndex, 1);
-    event.save();
-    res.json(200);
-}))
-
-
 ///////////////////////////////////
 //Routes
-
-app.use((req, res, next) => {
-    res.locals.currentUser = req.user;
-    next();
-})
 
 app.use(userRoutes);
 
 app.use(eventRoutes);
 
-
-///////////////////////////////////
-//Error endpoints
 app.use(errorRoutes);
 
 ///////////////////////////////////
