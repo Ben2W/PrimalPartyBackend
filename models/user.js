@@ -46,6 +46,13 @@ const UserSchema = new Schema({
             ref: 'Event'
         }
     ],
+    resetToken:[
+        {
+            data: String,
+            default: ''
+        }
+    ],
+
 }, {timestamps:true})
 
 

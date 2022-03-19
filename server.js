@@ -21,7 +21,7 @@ const catchAsync = require('./utils/catchAsync')
 const eventRoutes = require('./routes/eventRoutes');
 const userRoutes = require('./routes/userRoutes');
 const errorRoutes = require('./routes/errorRoutes');
-
+const emailRoutes = require('./routes/emailRoutes');
 
 ///////////////////////////////////
 // .env connections
@@ -125,6 +125,8 @@ passport.deserializeUser(User.deserializeUser());
 //Routes
 
 app.use(userRoutes);
+
+app.use(emailRoutes);
 
 app.use(eventRoutes);
 

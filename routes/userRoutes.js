@@ -37,6 +37,13 @@ userRouter.post('/login', (req, res, next) => {
 });
 
 
+
+
+userRouter.get('/protected', isLoggedIn,  catchAsync(async(req, res, next) => {
+    res.json({ status: 'success' })
+
+})); 
+
 userRouter.post('/logout', isLoggedIn, (req,res)=>{
     try{
         req.logout()
