@@ -1,7 +1,5 @@
 const errorRouter = require('express').Router();
-const AppError = require('../utils/AppError')
-
-
+const AppError = require('../utils/AppError');
 
 
 errorRouter.all('*', (req, res, next) => {

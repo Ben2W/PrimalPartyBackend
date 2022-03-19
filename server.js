@@ -1,20 +1,14 @@
 ///////////////////////////////////
 // Requirements and dependencies
 const express = require('express')
+const session = require('express-session');
 const path = require('path')
 const cors = require('cors')
 const mongoose = require('mongoose')
 const AppError = require('./utils/AppError')
 const catchAsync = require('./utils/catchAsync')
-
-///////////////////////////////////
-// Requirements and dependencies for passport
-var crypto = require('crypto'); // @TODO REMOVE THIS LINE
-const session = require('express-session');
-
 var passport = require('passport');
 const LocalStrategy = require('passport-local');
-
 const MongoStore = require('connect-mongo')(session);
 //const {isLoggedIn} = require('./middleware') @TODO ADD THIS LINE
 
@@ -155,12 +149,10 @@ passport.deserializeUser(User.deserializeUser());
 ///////////////////////////////////
 //Routes
 
-// @TODO ask emin what this does
-//
-// app.use((req, res, next) => {
-//     res.locals.currentUser = req.user;
-//     next();
-// })
+app.use((req, res, next) => {
+    res.locals.currentUser = req.user;
+    next();
+})
 
 app.use(userRoutes);
 
