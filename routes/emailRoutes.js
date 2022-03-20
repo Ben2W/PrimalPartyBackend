@@ -36,8 +36,9 @@ function generateToken() {
 
 
 emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
+
     if(req.isAuthenticated()){
-        return res.json({status: 'ERROR: you are already logged in'});
+        return res.status(500).json({error: 'you are already logged in'});
     } 
 
    
@@ -50,7 +51,7 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
 
     const user = await User.findOne({email: email});
     if(!user){
-        return res.json({status: 'this user does not exist'});
+        return res.status(500).json({error: 'user not found'});
     }
 
 
@@ -74,7 +75,7 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     */
 
     if(Date.now() - user.resetTokenCreation < spamCooldown){
-        return res.json({status: 'stop spamming'})
+        return res.status(500).json({error: 'cannot reset password at this moment'})
     }
     token = generateToken().toString();
     await user.updateOne({resetToken: token, resetTokenCreation: Date.now()});
@@ -105,10 +106,8 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     //@TODO: Properly handle these errors.
     sgMail.send(message)
         .then(response => res.json({status: 'email sent'}))
-    .catch(err => res.json({status: 'error: email not sent'}));
+    .catch(err => res.status(500).json({error: 'email cannot be sent'}));
 })); 
-
-
 
 
 
@@ -122,6 +121,12 @@ emailRouter.get('/reset/:token', catchAsync(async(req, res, next) => {
     }
 
 
+    /* 
+    *  
+    *  Set expire time to the amount of time a token is valid. Azure will use a environment variable so changing "expireTime" wont affect the remote server.
+    *  
+    *  *NOTE* Azure will set the environment variable to 15 seconds regardless of what you set spamCooldown to.
+    */
     expireTime = 86400000 //1 day in ms
     if(process.env.EMAIL_RESET_EXPIRE_TIME !== 'undefined'){
         spamCooldown = process.env.EMAIL_RESET_EXPIRE_TIME
@@ -139,6 +144,9 @@ emailRouter.get('/reset/:token', catchAsync(async(req, res, next) => {
     res.json({status: 'this token is valid'})
 
 }));
+
+
+
 
 emailRouter.post('/reset/:token', catchAsync(async(req, res, next) => {
 
