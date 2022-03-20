@@ -82,7 +82,7 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     */
     const url = 'http://' + req.headers.host.toString() + /reset/ + token.toString()
     const message = {
-        to: 'bewerner23@gmail.com',
+        to: email,
         from: 'no-reply@primaljet.com',
         templateId: 'd-e4e8ed898ae346a888e742ca2b954234',
         dynamicTemplateData: {
