@@ -10,7 +10,7 @@ const {isLoggedIn, isAdmin, isInvited} = require('../middleware')
 
 
 // View the events user created/got invited to 
-eventRouter.get('/events', isLoggedIn, isInvited, catchAsync(async(req, res) => {
+eventRouter.get('/events', isLoggedIn, catchAsync(async(req, res) => {
 	const id = req.user._id
 	const events = await Event.find({$or: [ {admin:id}, {guests:id}]})
 	res.json({ events })

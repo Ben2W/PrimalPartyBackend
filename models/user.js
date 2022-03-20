@@ -28,6 +28,14 @@ const UserSchema = new Schema({
         type:String,
         required:true
     },
+    resetToken:{
+        data: String,
+        default: ''
+    },
+    resetTokenCreation:{
+        type: Date,
+        default: Date.now
+    },
     friends:[
         {
             type: Schema.Types.ObjectId,
@@ -46,6 +54,8 @@ const UserSchema = new Schema({
             ref: 'Event'
         }
     ],
+    
+
 }, {timestamps:true})
 
 
