@@ -17,7 +17,7 @@ const AppError =  require('../utils/AppError')
             if (err) {
                 return res.status(500).json({error: 'there has been an issue creating an account'})
             }
-            res.status(200).json({error:''})
+            return res.status(200).json({error:''})
             
         })
     } catch (e) {
@@ -27,11 +27,11 @@ const AppError =  require('../utils/AppError')
 
 userRouter.post('/login', (req, res, next) => {
   passport.authenticate('local', function(err, user, info) {
-    if (err) {return res.json({error:'error happened when logging in'}) }
-    if (!user) {return res.json({error:'error happened when logging in'}) }
+    if (err) { return res.json({error:'error happened when logging in'}) }
+    if (!user) { return res.json({error:'error happened when logging in'}) }
     req.logIn(user, function(err) {
-      if (err) {return res.json({error:'login failed'}) }
-      res.json({error:''})
+      if (err) { return res.json({error:'login failed'}) }
+      return res.json({error:''})
     });
   })(req, res, next);
 });
@@ -40,14 +40,13 @@ userRouter.post('/login', (req, res, next) => {
 
 
 userRouter.get('/protected', isLoggedIn,  catchAsync(async(req, res, next) => {
-    res.json({ status: 'success' })
-
+    return res.json({ status: 'success' })
 })); 
 
 userRouter.post('/logout', isLoggedIn, (req,res)=>{
     try{
         req.logout()
-        res.status(200).json({error:''})
+        return res.status(200).json({error:''})
     }catch(e){
         throw new AppError(e,500)
     }
