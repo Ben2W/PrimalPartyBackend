@@ -41,13 +41,10 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     } 
 
    
-    token = generateToken().toString();
+
     email = req.body.email;
 
 
-    //@TODO: in the User Schema, keep track of when a resetToken was generated. To limit users from reseting passwords. IE: If a token was generated 10 seconds ago, deny this forgot password request.
-    //
-    //
     //@TODO: This call is more efficient than findOne => updateOne, but findOneAndUpdate is automatically generating emails for some reason???
     //const user = await User.findOneAndUpdate({email: email, resetToken: token});
 
@@ -55,18 +52,56 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     if(!user){
         return res.json({status: 'this user does not exist'});
     }
+
+
+
+    /* spamCooldown is a dev feature:
+    *  set to 0 for no cooldown
+    *  set to -1 to skip sgMail.send
+    *  set to 15000 for a 15 second email cooldown:
+    *  
+    *  *NOTE* Azure will set the environment variable to 15 seconds regardless of what you set spamCooldown to.
+    */
+    spamCooldown = 15000
+    if(process.env.RESET_SPAM_COOLDOWN !== 'undefined'){
+        spamCooldown = process.env.RESET_SPAM_COOLDOWN
+    }
+
+
+
+    /*
+    * If we are past the email cooldown, update the user in the DB with a generated reset token.
+    */
+
+    if(Date.now() - user.resetTokenCreation < spamCooldown){
+        return res.json({status: 'stop spamming'})
+    }
+    token = generateToken().toString();
     await user.updateOne({resetToken: token, resetTokenCreation: Date.now()});
 
+
+    /*
+    * Prepare the email.
+    */
+    const url = 'http://' + req.headers.host.toString() + /reset/ + token.toString()
     const message = {
         to: 'bewerner23@gmail.com',
         from: 'no-reply@primaljet.com',
         templateId: 'd-e4e8ed898ae346a888e742ca2b954234',
         dynamicTemplateData: {
             name: user.username,
-            link: token,
+            link: url,
         },
     };
 
+
+    /*
+    * Send the email using sgMail
+    * *NOTE* If we set spamCooldown to -1, skip sending the email.
+    */
+    if(spamCooldown == -1) {
+        return res.json({status: url})
+    }
     //@TODO: Properly handle these errors.
     sgMail.send(message)
         .then(response => res.json({status: 'email sent'}))
