@@ -63,8 +63,8 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     *  
     *  *NOTE* Azure will set the environment variable to 15 seconds regardless of what you set spamCooldown to.
     */
-    spamCooldown = 15000
-    if(process.env.RESET_SPAM_COOLDOWN !== 'undefined'){
+    spamCooldown = -1
+    if(process.env.RESET_SPAM_COOLDOWN != undefined){
         spamCooldown = process.env.RESET_SPAM_COOLDOWN
     }
 
