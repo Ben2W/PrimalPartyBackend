@@ -27,10 +27,10 @@ const AppError =  require('../utils/AppError')
 
 userRouter.post('/login', (req, res, next) => {
   passport.authenticate('local', function(err, user, info) {
-    if (err) { res.json({error:'error happened when logging in'}) }
-    if (!user) { res.json({error:'error happened when logging in'}) }
+    if (err) {return res.json({error:'error happened when logging in'}) }
+    if (!user) {return res.json({error:'error happened when logging in'}) }
     req.logIn(user, function(err) {
-      if (err) { res.json({error:'login failed'}) }
+      if (err) {return res.json({error:'login failed'}) }
       res.json({error:''})
     });
   })(req, res, next);
