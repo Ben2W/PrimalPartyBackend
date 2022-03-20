@@ -5,7 +5,9 @@ const Event = require('../models/event')
 
 const { userSchema, eventSchema, taskSchema } = require('../schemas.js');
 const catchAsync = require('../utils/catchAsync')
-const {isLoggedIn, isAdmin, isInvited} = require('../middleware') 
+const {isLoggedIn, isAdmin, isInvited} = require('../middleware'); 
+const { Mongoose } = require('mongoose');
+const { findByIdAndDelete } = require('../models/task');
 
 
 
@@ -65,8 +67,20 @@ eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
     res.status(200).json({'error':''});
 }))
 
-// //Add a guest to an event
-// //Checks if the guest is already in the event and adds them if not
+//Delete an event
+//Checks if the event exists and deletes it if so
+eventRouter.delete('/events/:eventId', isLoggedIn, catchAsync(async(req, res)=>{
+
+    const {eventId} = req.params;
+
+    await Event.findByIdAndDelete(eventId);
+    
+    
+    res.status(200).json({'error':''});
+}))
+
+//Add a guest to an event
+//Checks if the guest is already in the event and adds them if not
 eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, catchAsync(async(req, res)=>{
 
     const {eventId, guestId} = req.params;

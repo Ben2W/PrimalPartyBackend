@@ -48,7 +48,7 @@ const EventSchema = new Schema({
 //remove this event from events list of all the users
 
 EventSchema.post('findOneAndDelete', async function(event){
-    const {_id} = event
+    const {_id} = event;
 
     if(event.tasks){
         await Task.deleteMany({event: _id})
