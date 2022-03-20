@@ -40,13 +40,22 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
         return res.json({status: 'ERROR: you are already logged in'});
     } 
 
+   
     token = generateToken().toString();
     email = req.body.email;
 
 
     //@TODO: in the User Schema, keep track of when a resetToken was generated. To limit users from reseting passwords. IE: If a token was generated 10 seconds ago, deny this forgot password request.
-    const user = await User.findOneAndUpdate({email: email, resetToken: token});
-    console.log(user);
+    //
+    //
+    //@TODO: This call is more efficient than findOne => updateOne, but findOneAndUpdate is automatically generating emails for some reason???
+    //const user = await User.findOneAndUpdate({email: email, resetToken: token});
+
+    const user = await User.findOne({email: email});
+    if(!user){
+        return res.json({status: 'this user does not exist'});
+    }
+    await user.updateOne({resetToken: token, resetTokenCreation: Date.now()});
 
     const message = {
         to: 'bewerner23@gmail.com',
@@ -58,9 +67,7 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
         },
     };
 
-
-
-
+    //@TODO: Properly handle these errors.
     sgMail.send(message)
         .then(response => res.json({status: 'email sent'}))
     .catch(err => res.json({status: 'error: email not sent'}));

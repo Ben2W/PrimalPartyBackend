@@ -29,8 +29,12 @@ const UserSchema = new Schema({
         required:true
     },
     resetToken:{
-            data: String,
-            default: ''
+        data: String,
+        default: ''
+    },
+    resetTokenCreation:{
+        type: Date,
+        default: Date.now
     },
     friends:[
         {
