@@ -12,14 +12,14 @@ const {isLoggedIn, isAdmin, isInvited} = require('../middleware')
 // View the events user created/got invited to 
 eventRouter.get('/events', isLoggedIn, catchAsync(async(req, res) => {
 	const id = req.user._id
-	const events = await Event.find({$or: [ {admin:id}, {guests:id}]})
+	const events = await Event.find({$or: [{guests:id}, {admin:id}]})
 	res.json({ events })
 }))
 
 // View the details of a specific event
 eventRouter.get('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(req, res) => {
 	const { eventId } = req.params;
-	const currEvent = await Event.findById(eventId).populate('guests').populate('tasks')
+	const currEvent = await Event.findById(eventId).populate('guests').populate('tasks').populate('admin')
 	res.json({ currEvent });
 }))
 
@@ -30,15 +30,17 @@ eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(asy
 	res.json({guests: currEvent.guests});
 }))
 
-
-//needs repopulation
 // View the tasks of a specific event
-eventRouter.get('/events/:eventId/tasks', isLoggedIn, catchAsync(async(req, res) => {
+eventRouter.get('/events/:eventId/tasks', isLoggedIn, isInvited, catchAsync(async(req, res) => {
 	const { eventId } = req.params;
-	const currEvent = await Event.findById(eventId).populate('tasks')
-
-    //fill in the tasks here
-
+	const currEvent = await Event.findById(eventId)
+	.populate({ 
+		path: 'tasks',
+		populate: {
+		  path: 'assignees',
+		  model: 'User'
+		} 
+	 })
 	res.json({tasks: currEvent.tasks});
 }))
 
@@ -46,23 +48,20 @@ eventRouter.get('/events/:eventId/tasks', isLoggedIn, catchAsync(async(req, res)
 eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, catchAsync(async(req, res) => {
 	const { taskId } = req.params;
 	const currTask = await Task.findById(taskId).populate('assignees')
-	
 	res.json({ currTask });
 }))
 
 
 
+//Create a new event
+eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
 
-
-// //Create a new event
-// app.post('/events', catchAsync(async(req, res)=>{
-
-//     const {name, description, tags, address, date, admin, guests, tasks} = req.body;
-//     const newEvent = new Event({name : name, description : description, tags : tags, address : address, date : date, admin : admin, guests : guests, tasks : tasks});
-//     await newEvent.save();
+    const {name, description, tags, address, date, admin, guests, tasks} = req.body;
+    const newEvent = new Event({name : name, description : description, tags : tags, address : address, date : date, admin : admin, guests : guests, tasks : tasks});
+    await newEvent.save();
     
-//     res.json(200);
-// }))
+    res.status(200).json({'error':''});
+}))
 
 
 // //Add a guest to an event
