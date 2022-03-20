@@ -25,14 +25,10 @@ sgMail.setApiKey(sgMAILAPI)
 * Generates a token the user will receive via email if they request a password change.
 *
 */
-function generateToken() {
-    var buf = new Buffer.alloc(16);
-    for (var i = 0; i < buf.length; i++) {
-        buf[i] = Math.floor(Math.random() * 256);
-    }
-    var id = buf.toString('base64');
-    return id;
-}
+
+var crypto = require("crypto")
+
+
 
 
 emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
@@ -63,8 +59,8 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     *  
     *  *NOTE* Azure will set the environment variable to 15 seconds regardless of what you set spamCooldown to.
     */
-    spamCooldown = 15000
-    if(process.env.RESET_SPAM_COOLDOWN !== 'undefined'){
+    spamCooldown = -1
+    if(process.env.RESET_SPAM_COOLDOWN != undefined){
         spamCooldown = process.env.RESET_SPAM_COOLDOWN
     }
 
@@ -77,7 +73,7 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     if(Date.now() - user.resetTokenCreation < spamCooldown){
         return res.status(500).json({error: 'cannot reset password at this moment'})
     }
-    token = generateToken().toString();
+    token = crypto.randomBytes(20).toString('hex');
     await user.updateOne({resetToken: token, resetTokenCreation: Date.now()});
 
 
@@ -86,7 +82,7 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     */
     const url = 'http://' + req.headers.host.toString() + /reset/ + token.toString()
     const message = {
-        to: 'bewerner23@gmail.com',
+        to: email,
         from: 'no-reply@primaljet.com',
         templateId: 'd-e4e8ed898ae346a888e742ca2b954234',
         dynamicTemplateData: {
@@ -149,7 +145,44 @@ emailRouter.get('/reset/:token', catchAsync(async(req, res, next) => {
 
 
 emailRouter.post('/reset/:token', catchAsync(async(req, res, next) => {
+    const user = await User.findOne({resetToken: req.params.token});
 
+    if(!user){
+        return res.json({status: 'this user does not exist'});
+    }
+
+
+     /* 
+    *  
+    *  Set expire time to the amount of time a token is valid. Azure will use a environment variable so changing "expireTime" wont affect the remote server.
+    *  
+    *  *NOTE* Azure will set the environment variable to 15 seconds regardless of what you set spamCooldown to.
+    */
+    expireTime = 86400000 //1 day in ms
+    if(process.env.EMAIL_RESET_EXPIRE_TIME !== 'undefined'){
+        spamCooldown = process.env.EMAIL_RESET_EXPIRE_TIME
+    }
+
+    /*
+    * If the token is expired, error.
+    *
+    */
+    if(expireTime + user.resetTokenCreation.getTime()  < Date.now()){
+        return res.json({status: 'token has expired'})
+    }
+
+    await user.setPassword(req.body.password);
+    await user.updateOne({resetToken: ''});
+    await user.save()
+
+    
+    req.login(user, err => {
+        if (err) {
+            return res.status(500).json({error: 'there has been an issue logging in to your account'})
+        }
+        res.status(200).json({error:''})
+        
+    })
 
 }));
 
