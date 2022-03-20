@@ -25,14 +25,10 @@ sgMail.setApiKey(sgMAILAPI)
 * Generates a token the user will receive via email if they request a password change.
 *
 */
-function generateToken() {
-    var buf = new Buffer.alloc(16);
-    for (var i = 0; i < buf.length; i++) {
-        buf[i] = Math.floor(Math.random() * 256);
-    }
-    var id = buf.toString('base64');
-    return id;
-}
+
+var crypto = require("crypto")
+
+
 
 
 emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
@@ -77,7 +73,7 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     if(Date.now() - user.resetTokenCreation < spamCooldown){
         return res.status(500).json({error: 'cannot reset password at this moment'})
     }
-    token = generateToken().toString();
+    token = crypto.randomBytes(20).toString('hex');
     await user.updateOne({resetToken: token, resetTokenCreation: Date.now()});
 
 
