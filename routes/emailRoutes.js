@@ -97,7 +97,7 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
 
     /*
     * Send the email using sgMail
-    * *NOTE* If we set spamCooldown to -1, skip sending the email.
+    * *NOTE* If we set spamCooldown to -1, skip sending the email and the JSON response will be the link.
     */
     if(spamCooldown == -1) {
         return res.json({status: url})
@@ -107,5 +107,46 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
         .then(response => res.json({status: 'email sent'}))
     .catch(err => res.json({status: 'error: email not sent'}));
 })); 
+
+
+
+
+
+
+emailRouter.get('/reset/:token', catchAsync(async(req, res, next) => {
+
+    const user = await User.findOne({resetToken: req.params.token});
+
+    if(!user){
+        return res.json({status: 'this user does not exist'});
+    }
+
+
+    expireTime = 86400000 //1 day in ms
+    if(process.env.EMAIL_RESET_EXPIRE_TIME !== 'undefined'){
+        spamCooldown = process.env.EMAIL_RESET_EXPIRE_TIME
+    }
+
+    /*
+    * If the token is expired, error.
+    *
+    */
+
+    if(expireTime + user.resetTokenCreation.getTime()  < Date.now()){
+        return res.json({status: 'token has expired'})
+    }
+
+    res.json({status: 'this token is valid'})
+
+}));
+
+emailRouter.post('/reset/:token', catchAsync(async(req, res, next) => {
+
+
+}));
+
+
+
+
 
 module.exports = emailRouter;
