@@ -64,57 +64,62 @@ eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
 }))
 
 
+
+/*
+*	Nick's Routes
+*/
+
 // //Add a guest to an event
 // //Checks if the guest is already in the event and adds them if not
-// app.post('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=>{
+eventRouter.post('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=>{
 
-//     const {eventId, guestId} = req.params;
-//     const event = await Event.findById(eventId);
+    const {eventId, guestId} = req.params;
+    const event = await Event.findById(eventId);
     
-//     if(event.guests.indexOf(guestId) != -1)
-//     { 
-//         throw new AppError ("Guest already found in guest list", 300);
-//     };
+    if(event.guests.indexOf(guestId) != -1)
+    { 
+        throw new AppError ("Guest already found in guest list", 300);
+    };
 
-//     event.guests.push(guestId);
-//     event.save();
-//     res.json(200);
-// }))
+    event.guests.push(guestId);
+    event.save();
+    res.json(200);
+}))
 
-// //Delete a guest from an event
-// //Checks if the guest is in the list and deletes it based on index if so
-// app.delete('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=>{
+//Delete a guest from an event
+//Checks if the guest is in the list and deletes it based on index if so
+eventRouter.delete('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=>{
 
-//     const {eventId, guestId} = req.params;
-//     const event = await Event.findById(eventId);
-//     const guestIndex = event.guests.indexOf(guestId);
+    const {eventId, guestId} = req.params;
+    const event = await Event.findById(eventId);
+    const guestIndex = event.guests.indexOf(guestId);
     
-//     if(guestIndex == -1)
-//     { 
-//         throw new AppError ("Guest not found", 300);
-//     };
+    if(guestIndex == -1)
+    { 
+        throw new AppError ("Guest not found", 300);
+    };
 
-//     event.guests.splice(guestIndex, 1);
-//     event.save();
-//     res.json(200);
-// }))
+    event.guests.splice(guestIndex, 1);
+    event.save();
+    res.json(200);
+}))
 
-// //Delete a task from an event
-// //Checks if the task is in the list and deletes it based on index if so
-// app.delete('/events/:eventId/tasks/:taskId', catchAsync(async(req, res)=>{
+//Delete a task from an event
+//Checks if the task is in the list and deletes it based on index if so
+eventRouter.delete('/events/:eventId/tasks/:taskId', catchAsync(async(req, res)=>{
 
-//     const {eventId, taskId} = req.params;
-//     const event = await Event.findById(eventId);
-//     const taskIndex = event.tasks.indexOf(taskId);
+    const {eventId, taskId} = req.params;
+    const event = await Event.findById(eventId);
+    const taskIndex = event.tasks.indexOf(taskId);
     
-//     if(taskIndex == -1)
-//     { 
-//         throw new AppError ("task not found", 300);
-//     };
+    if(taskIndex == -1)
+    { 
+        throw new AppError ("task not found", 300);
+    };
 
-//     event.tasks.splice(taskIndex, 1);
-//     event.save();
-//     res.json(200);
-// }))
+    event.tasks.splice(taskIndex, 1);
+    event.save();
+    res.json(200);
+}))
 
 module.exports = eventRouter;
