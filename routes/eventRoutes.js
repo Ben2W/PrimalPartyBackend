@@ -51,7 +51,9 @@ eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, catchAsync(async(r
 	res.json({ currTask });
 }))
 
-
+/*
+*	Nick's Routes
+*/
 
 //Create a new event
 eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
@@ -63,15 +65,9 @@ eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
     res.status(200).json({'error':''});
 }))
 
-
-
-/*
-*	Nick's Routes
-*/
-
 // //Add a guest to an event
 // //Checks if the guest is already in the event and adds them if not
-eventRouter.post('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=>{
+eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, catchAsync(async(req, res)=>{
 
     const {eventId, guestId} = req.params;
     const event = await Event.findById(eventId);
@@ -83,12 +79,12 @@ eventRouter.post('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=
 
     event.guests.push(guestId);
     event.save();
-    res.json(200);
+    res.status(200).json({'error':''});
 }))
 
 //Delete a guest from an event
 //Checks if the guest is in the list and deletes it based on index if so
-eventRouter.delete('/events/:eventId/guests/:guestId', catchAsync(async(req, res)=>{
+eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, catchAsync(async(req, res)=>{
 
     const {eventId, guestId} = req.params;
     const event = await Event.findById(eventId);
@@ -101,12 +97,12 @@ eventRouter.delete('/events/:eventId/guests/:guestId', catchAsync(async(req, res
 
     event.guests.splice(guestIndex, 1);
     event.save();
-    res.json(200);
+    res.status(200).json({'error':''});
 }))
 
 //Delete a task from an event
 //Checks if the task is in the list and deletes it based on index if so
-eventRouter.delete('/events/:eventId/tasks/:taskId', catchAsync(async(req, res)=>{
+eventRouter.delete('/events/:eventId/tasks/:taskId', isLoggedIn, catchAsync(async(req, res)=>{
 
     const {eventId, taskId} = req.params;
     const event = await Event.findById(eventId);
@@ -119,7 +115,7 @@ eventRouter.delete('/events/:eventId/tasks/:taskId', catchAsync(async(req, res)=
 
     event.tasks.splice(taskIndex, 1);
     event.save();
-    res.json(200);
+    res.status(200).json({'error':''});
 }))
 
 module.exports = eventRouter;
