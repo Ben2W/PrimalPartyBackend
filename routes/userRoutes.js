@@ -8,6 +8,9 @@ const AppError =  require('../utils/AppError')
 
 
 /**
+ * @TODO Make the token, a JWT 
+ * 
+ * 
  * @swagger
  * /register:
  *  post:
@@ -53,8 +56,6 @@ const AppError =  require('../utils/AppError')
  *              
  */
  userRouter.post('/register', catchAsync(async(req, res, next) => {
-    
-    console.log(req.body)
     try {
         
         const {password, ...rest} = req.body

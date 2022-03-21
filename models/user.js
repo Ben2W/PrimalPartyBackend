@@ -28,6 +28,10 @@ const UserSchema = new Schema({
         type:String,
         required:true
     },
+    emailAuthenticated:{
+        type:Boolean,
+        default: false
+    },
     resetToken:{
         data: String,
         default: ''
