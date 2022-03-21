@@ -6,6 +6,11 @@ const catchAsync = require('../utils/catchAsync');
 const {isLoggedIn} = require('../middleware.js')
 const AppError =  require('../utils/AppError')
 
+var crypto = require("crypto")
+
+// @TODO Resend Token
+// @TODO delete user (if an attacker is using someone else' email AND the user has not been authorized yet.)
+// @TODO Approve token
 
 /**
  * @TODO Make the token, a JWT 
@@ -58,6 +63,19 @@ const AppError =  require('../utils/AppError')
  userRouter.post('/register', catchAsync(async(req, res, next) => {
     try {
         
+
+        //Make sure the email and username are unique.
+        const {username, email} = req.body
+        const duplicateUsername = await User.exists({username: username});
+        const duplicateEmail = await User.exists({email: email});
+
+        if (duplicateEmail && duplicateUsername) return res.status(410).json({error: 'username and email already taken'})
+        if (duplicateEmail) return res.status(410).json({error: 'email already taken'})
+        if (duplicateUsername) return res.status(411).json({error: 'username already taken'})
+ 
+
+
+
         const {password, ...rest} = req.body
         const user = new User(rest);
         const registeredUser = await User.register(user, password);
@@ -65,10 +83,16 @@ const AppError =  require('../utils/AppError')
             if (err) {
                 return res.status(500).json({error: 'there has been an issue creating an account'})
             }
+
+
+
+
+
             return res.status(200).json({error:''})
             
         })
     } catch (e) {
+
         return res.status(500).json({error: 'there has been an issue creating an account'})
     }
  }))
