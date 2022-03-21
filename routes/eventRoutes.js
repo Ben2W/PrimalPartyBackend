@@ -67,19 +67,23 @@ eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
     res.status(200).json({'error':''});
 }))
 
-/*
+
 //Delete an event
 //Checks if the event exists and deletes it if so
 eventRouter.delete('/events/:eventId', isLoggedIn, catchAsync(async(req, res)=>{
-
     const {eventId} = req.params;
-
-    await Event.findByIdAndDelete(eventId);
-    
+    try
+    {
+        await Event.findByIdAndDelete(eventId);
+    }
+    catch(err)
+    {
+        return res.json({error:'Event does not exist'})
+    }
     
     res.status(200).json({'error':''});
 }))
-*/
+
 
 //Add a guest to an event
 //Checks if the guest is already in the event and adds them if not

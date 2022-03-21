@@ -48,13 +48,16 @@ const EventSchema = new Schema({
 //remove this event from events list of all the users
 
 EventSchema.post('findOneAndDelete', async function(event){
+    const User = require('./user')
+    const Task = require('./task')
+    
     const {_id} = event;
 
     if(event.tasks){
         await Task.deleteMany({event: _id})
     }
 
-    await User.updateMany({}, {$pull: {event: _id}})
+    await User.updateMany({}, {$pull: {events: _id}});
 })
 
 module.exports = mongoose.model('Event', EventSchema)
