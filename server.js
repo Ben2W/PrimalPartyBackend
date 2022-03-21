@@ -22,6 +22,8 @@ const eventRoutes = require('./routes/eventRoutes');
 const userRoutes = require('./routes/userRoutes');
 const errorRoutes = require('./routes/errorRoutes');
 const emailRoutes = require('./routes/emailRoutes');
+const swaggerRoutes = require('./routes/swaggerRoutes');
+
 
 ///////////////////////////////////
 // .env connections
@@ -35,6 +37,8 @@ const secret = process.env.SECRET
 const User = require('./models/user')
 const Task = require('./models/task')
 const Event = require('./models/event')
+
+
 
 
 ///////////////////////////////////
@@ -121,8 +125,15 @@ passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
 
+
+
+
+
+
 ///////////////////////////////////
 //Routes
+
+app.use(swaggerRoutes);
 
 app.use(userRoutes);
 
