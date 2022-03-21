@@ -77,12 +77,11 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
 
     /* spamCooldown is a dev feature:
     *  set to 0 for no cooldown
-    *  set to -1 to skip sgMail.send
     *  set to 15000 for a 15 second email cooldown:
     *  
     *  *NOTE* Azure will set the environment variable to 15 seconds regardless of what you set spamCooldown to.
     */
-    spamCooldown = -1
+    spamCooldown = 1500
     if(process.env.RESET_SPAM_COOLDOWN != undefined){
         spamCooldown = process.env.RESET_SPAM_COOLDOWN
     }
@@ -115,13 +114,6 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     };
 
 
-    /*
-    * Send the email using sgMail
-    * *NOTE* If we set spamCooldown to -1, skip sending the email and the JSON response will be the link.
-    */
-    if(spamCooldown == 1500) {
-        return res.json({status: url})
-    }
     //@TODO: Properly handle these errors.
     sgMail.send(message)
         .then(response => res.json({status: 'email sent'}))
@@ -130,13 +122,38 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
 
 
 
-
+/**
+ * @swagger
+ * /reset/{token}:
+ *  get:
+ *      description: Checks if the password reset token is valid
+ *      parameters:
+ *          -   in: path
+ *              name: token
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "the token to reset a password via email, the token will look like http://primalparty.com/reset/[token]"
+ *          
+ *      responses:
+ *          '200':
+ *              description: token valid
+ *          '500':
+ *              description: unexepected error
+ *          '400':
+ *              description: not a valid token
+ *          '401':
+ *              description: this token is expired
+ */
 emailRouter.get('/reset/:token', catchAsync(async(req, res, next) => {
 
+
+    console.log(req.params.token);
     const user = await User.findOne({resetToken: req.params.token});
 
     if(!user){
-        return res.json({status: 'this user does not exist'});
+        return res.status(400).json({error: 'this user does not exist'});
     }
 
 
@@ -157,7 +174,7 @@ emailRouter.get('/reset/:token', catchAsync(async(req, res, next) => {
     */
 
     if(expireTime + user.resetTokenCreation.getTime()  < Date.now()){
-        return res.json({status: 'token has expired'})
+        res.status(401).json({error: 'token expired'});
     }
 
     res.json({status: 'this token is valid'})
@@ -166,12 +183,48 @@ emailRouter.get('/reset/:token', catchAsync(async(req, res, next) => {
 
 
 
-
+/**
+ * @swagger
+ * /reset/{token}:
+ *  post:
+ *      description: Changes account associated with email with a password, given a reset token.
+ *      parameters:
+ *          -   in: path
+ *              name: token
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "the token to reset a password via email, the token will look like http://primalparty.com/reset/[token]"
+ *              
+ *      requestBody:
+ *          required: true
+ *          content:
+ *              application/x-www-form-urlencoded:
+ *                  schema:
+ *                      type: object
+ *                      properties:
+ *                          password:
+ *                              type: string
+ *                              description: the new password
+ *                              example: newpassword
+ *          
+ *      responses:
+ *          '200':
+ *              description: success
+ *          '500':
+ *              description: unexepected error
+ *          '400':
+ *              description: user does not exist
+ *          '401':
+ *              description: token has expired
+ *              
+ */
 emailRouter.post('/reset/:token', catchAsync(async(req, res, next) => {
     const user = await User.findOne({resetToken: req.params.token});
 
     if(!user){
-        return res.json({status: 'this user does not exist'});
+        return res.status(400).json({error: 'this user does not exist'});
     }
 
 
@@ -191,7 +244,7 @@ emailRouter.post('/reset/:token', catchAsync(async(req, res, next) => {
     *
     */
     if(expireTime + user.resetTokenCreation.getTime()  < Date.now()){
-        return res.json({status: 'token has expired'})
+        res.status(401).json({error: 'token expired'});
     }
 
     await user.setPassword(req.body.password);
