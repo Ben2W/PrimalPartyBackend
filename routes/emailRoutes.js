@@ -16,30 +16,53 @@ require('dotenv').config()
 const sgMAILAPI = process.env.SENDGRID_API_KEY
 sgMail.setApiKey(sgMAILAPI)
 
-
-
-
-
-
-/*
-* Generates a token the user will receive via email if they request a password change.
-*
-*/
-
 var crypto = require("crypto")
 
-
-
-
+/**
+ * @swagger
+ * /forgot:
+ *  put:
+ *      description: Reset a users password by sending them an email with a reset link.
+ *      requestBody:
+ *          required: true
+ *          content:
+ *              application/x-www-form-urlencoded:
+ *                  schema:
+ *                      type: object
+ *                      properties:
+ *                          email:
+ *                              type: string
+ *                              description: the user's email
+ *                              example: example@gmail.com
+ *          
+ *      responses:
+ *          '200':
+ *              description: success
+ *          '500':
+ *              description: unexepected error
+ *          '400':
+ *              description: you are already logged in
+ *          '401':
+ *              description: user not found
+ *          '402':
+ *              description: please wait at least 15 seconds between reseting passwords
+ *          '403':
+ *              description: email invalid
+ *              
+ */
 emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
 
     if(req.isAuthenticated()){
-        return res.status(500).json({error: 'you are already logged in'});
+        return res.status(400).json({error: 'you are already logged in'});
     } 
 
    
 
     email = req.body.email;
+    // @TODO: add more ways an email can be invalid
+    if (email == undefined){
+        return res.status(403).json({error: 'email invalid'});
+    }
 
 
     //@TODO: This call is more efficient than findOne => updateOne, but findOneAndUpdate is automatically generating emails for some reason???
@@ -47,7 +70,7 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
 
     const user = await User.findOne({email: email});
     if(!user){
-        return res.status(500).json({error: 'user not found'});
+        return res.status(401).json({error: 'user not found'});
     }
 
 
@@ -71,7 +94,7 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     */
 
     if(Date.now() - user.resetTokenCreation < spamCooldown){
-        return res.status(500).json({error: 'cannot reset password at this moment'})
+        return res.status(402).json({error: 'please wait at least 15 seconds between reseting passwords'})
     }
     token = crypto.randomBytes(20).toString('hex');
     await user.updateOne({resetToken: token, resetTokenCreation: Date.now()});
@@ -96,7 +119,7 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     * Send the email using sgMail
     * *NOTE* If we set spamCooldown to -1, skip sending the email and the JSON response will be the link.
     */
-    if(spamCooldown == -1) {
+    if(spamCooldown == 1500) {
         return res.json({status: url})
     }
     //@TODO: Properly handle these errors.
