@@ -67,6 +67,7 @@ eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
     res.status(200).json({'error':''});
 }))
 
+/*
 //Delete an event
 //Checks if the event exists and deletes it if so
 eventRouter.delete('/events/:eventId', isLoggedIn, catchAsync(async(req, res)=>{
@@ -78,6 +79,7 @@ eventRouter.delete('/events/:eventId', isLoggedIn, catchAsync(async(req, res)=>{
     
     res.status(200).json({'error':''});
 }))
+*/
 
 //Add a guest to an event
 //Checks if the guest is already in the event and adds them if not
@@ -86,10 +88,8 @@ eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, catchAsync(asyn
     const {eventId, guestId} = req.params;
     const event = await Event.findById(eventId);
     
-    if(event.guests.indexOf(guestId) != -1)
-    { 
-        throw new AppError ("Guest already found in guest list", 300);
-    };
+    if(event == null){return res.json({error:'Event does not exist'})}
+    if(event.guests.indexOf(guestId) != -1){ return res.json({error:'Guest already found in guest list'})}
 
     event.guests.push(guestId);
     event.save();
@@ -102,14 +102,27 @@ eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, catchAsync(as
 
     const {eventId, guestId} = req.params;
     const event = await Event.findById(eventId);
+
+    if(event == null){return res.json({error:'Event does not exist'})}
     const guestIndex = event.guests.indexOf(guestId);
-    
-    if(guestIndex == -1)
-    { 
-        throw new AppError ("Guest not found", 300);
-    };
+    if(guestIndex == -1){ return res.json({error:'Guest not found in guest list'})}
 
     event.guests.splice(guestIndex, 1);
+    event.save();
+    res.status(200).json({'error':''});
+}))
+
+//Add a task to an event
+//Checks if the task is already in the event and adds it if not
+eventRouter.post('/events/:eventId/tasks/:taskId', isLoggedIn, catchAsync(async(req, res)=>{
+
+    const {eventId,taskId} = req.params;
+    const event = await Event.findById(eventId);
+    
+    if(event == null){return res.json({error:'Event does not exist'})}
+    if(event.tasks.indexOf(taskId) != -1){ return res.json({error:'Task already found in task list'})}
+
+    event.tasks.push(taskId);
     event.save();
     res.status(200).json({'error':''});
 }))
@@ -120,12 +133,10 @@ eventRouter.delete('/events/:eventId/tasks/:taskId', isLoggedIn, catchAsync(asyn
 
     const {eventId, taskId} = req.params;
     const event = await Event.findById(eventId);
+
+    if(event == null){return res.json({error:'Event does not exist'})}
     const taskIndex = event.tasks.indexOf(taskId);
-    
-    if(taskIndex == -1)
-    { 
-        throw new AppError ("task not found", 300);
-    };
+    if(taskIndex == -1){ return res.json({error:'task not found in task list'})}
 
     event.tasks.splice(taskIndex, 1);
     event.save();
