@@ -11,13 +11,51 @@ const task = require('../models/task');
 
 
 // View the events user created/got invited to 
+/**
+ * @swagger
+ * /events:
+ *  get:
+ *      description: View the events user created/got invited to 
+ *      tags:
+ *        - Events 
+ *        - Get
+ *      responses:
+ *          '200':
+ *              description: {{eventList}}
+ *          '500':
+ *              description: unexepected error
+ */
 eventRouter.get('/events', isLoggedIn, catchAsync(async(req, res) => {
 	const id = req.user._id
 	const events = await Event.find({$or: [{guests:id}, {admin:id}]})
 	res.json({ events })
 }))
 
+
 // View the guests of a specific event
+/**
+ * @swagger
+ * /events/:eventId/guests:
+ *  get:
+ *      description: View the guests of a specific event
+ *      tags:
+ *        - Events 
+ *        - Get
+ *      parameters:
+ *          -   in: path
+ *              name: eventId
+ *              schema:
+ *                  type: string
+ *                  example: 623018e31d596470d49769e0
+ *              required: true
+ *              description: "The ID of the event, from which we are pulling guest information from"
+ *              
+ *      responses:
+ *          '200':
+ *              description: list of guests.
+ *          '500':
+ *              description: unexepected error
+ */
 eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(async(req, res) => {
 	const { eventId } = req.params;
 	const currEvent = await Event.findById(eventId).populate('guests')
@@ -56,6 +94,8 @@ eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, catchAsync(async(r
 /*
 *	Nick's Routes
 */
+
+
 
 
 // Finished, take a closer look into storing dates in mongoose and sending them in js
@@ -97,6 +137,8 @@ eventRouter.delete('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(r
     
     res.status(200).json({error:''});
 }))
+
+
 
 
 //Add a guest to an event
