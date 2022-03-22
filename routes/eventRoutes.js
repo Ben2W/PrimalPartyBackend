@@ -70,6 +70,42 @@ eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
     res.status(200).json({error:''});
 }))
 
+//Update event information
+//Check if the user is an admin and edit the event information if so
+eventRouter.put('/events/:eventId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
+
+    const {eventId} = req.params;
+
+    const event = await Event.findById(eventId);
+    if(!event){return res.status(500).json({error:'Event does not exist'})}
+    const {name=event.name, description=event.description, tags=event.tags, address=event.address, date=event.date} = req.body;
+
+    if(name == '' || date == '' || address == ''){return res.status(500).json({error:'Fields required'})}
+    await Event.findByIdAndUpdate(eventId, {$set: {name : name, description : description, tags : tags, address : address, date : date}}, {new: true, runValidators: true});
+    
+    res.status(200).json({'error':''});
+}))
+
+//Update the task of an event
+//Check if event exists, if task exists, if task is part of event, if json has all required fields. Update task information if so.
+eventRouter.put('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
+
+    const {eventId, taskId} = req.params;
+
+    const event = await Event.findById(eventId);
+    if(!event){return res.status(500).json({error:'Event does not exist'})}
+
+    const task = await Task.findById(taskId);
+    if(!task){return res.status(500).json({error:'Task does not exist'})}
+    if(task.event != eventId){return res.status(500).json({error:'Task is not part of this event'})}
+
+    const {name=task.name, description=task.description, assignees=task.assignees, done=task.done} = req.body;
+    if(name == '' || done == ''){return res.status(500).json({error:'Fields required'})}
+    await Task.findByIdAndUpdate(taskId, {$set: {name : name, description : description, $addToSet: {assignees : assignees}, done : done}}, {new: true, runValidators: true});
+    
+    res.status(200).json({'error':''});
+}))
+
 
 //Checks if the event exists and deletes it if so
 eventRouter.delete('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(req, res)=>{
