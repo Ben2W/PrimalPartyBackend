@@ -196,6 +196,67 @@ eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, catchAsync(async(r
 
 // Finished, take a closer look into storing dates in mongoose and sending them in js
 //Create a new event
+/**
+ * @TODO Make the token, a JWT 
+ * 
+ * 
+ * @swagger
+ * /register:
+ *  post:
+ *      description: Create a new event.
+ *      tags:
+ *        - Events
+ *        - Post
+ *      requestBody:
+ *          required: true
+ *          content:
+ *              application/x-www-form-urlencoded:
+ *                  schema:
+ *                      type: object
+ *                      properties:
+ *                          name:
+ *                              type: string
+ *                              description: The name of the event
+ *                              example: movienight
+ *                          description:
+ *                              type: string
+ *                              description: NOT REQUIRED, the  description of the event
+ *                              example: movie night with the boys
+ *                          tags:
+ *                              type: array
+ *                              items:
+ *                                  type: string
+ *                              description: tags for the event
+ *                              example: movie, night, not-for-girls
+ *                          firstName:
+ *                              type: string
+ *                              description: the user's first name
+ *                              example: rick                       
+ *                          lastName:
+ *                              type: string
+ *                              description: the user's last name
+ *                              example: leinecker        
+ *                          phone:
+ *                              type: string
+ *                              description: the user's phone number, must be 12 characters long
+ *                              example: 199999999999
+ * 
+ *         
+ *      responses:
+ *          '200':
+ *              description: email sent
+ *          '500':
+ *              description: there is an issue creating the account (this needs to be better)
+ *          '501':
+ *              description: email unable to be sent
+ *          '410':
+ *              description: username and email already taken
+ *          '411':
+ *              description: email already taken
+ *          '412':
+ *              description: username already taken
+ *              
+ */
 eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
 
     const {name, description="", tags=[], address, date} = req.body;
