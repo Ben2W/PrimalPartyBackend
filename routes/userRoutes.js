@@ -189,6 +189,105 @@ userRouter.post('/login', (req, res, next) => {
 
 /**
  * @swagger
+ * /resendauthorization:
+ *  put:
+ *      description: Sends another authorization email for user.
+ *      requestBody:
+ *          required: true
+ *          content:
+ *              application/x-www-form-urlencoded:
+ *                  schema:
+ *                      type: object
+ *                      properties:
+ *                          email:
+ *                              type: string
+ *                              description: the user's email
+ *                              example: example@gmail.com
+ *          
+ *      responses:
+ *          '200':
+ *              description: success
+ *          '500':
+ *              description: unexepected error
+ *          '400':
+ *              description: this email is already authenticated
+ *          '401':
+ *              description: user not found
+ *          '402':
+ *              description: please wait at least 15 seconds between sending emails
+ *          '403':
+ *              description: email invalid
+ *              
+ */
+ userRouter.put('/resendauthorization', catchAsync(async(req, res, next) => {
+
+    email = req.body.email;
+    // @TODO: add more ways an email can be invalid
+    if (email == undefined){
+        return res.status(403).json({error: 'email invalid'});
+    }
+
+
+    //@TODO: This call is more efficient than findOne => updateOne, but findOneAndUpdate is automatically generating emails for some reason???
+    //const user = await User.findOneAndUpdate({email: email, resetToken: token});
+
+    const user = await User.findOne({email: email});
+    if(!user){
+        return res.status(401).json({error: 'user not found'});
+    }
+
+    if(user.emailAuthenticated){
+        return res.status(400).json({error: 'this email is already authenticated'});
+    }
+
+
+    /* spamCooldown is a dev feature:
+    *  set to 0 for no cooldown
+    *  set to 15000 for a 15 second email cooldown:
+    *  
+    *  *NOTE* Azure will set the environment variable to 15 seconds regardless of what you set spamCooldown to.
+    */
+    spamCooldown = 1500
+    if(process.env.RESET_SPAM_COOLDOWN != undefined){
+        spamCooldown = process.env.RESET_SPAM_COOLDOWN
+    }
+
+
+
+    /*
+    * If we are past the email cooldown, update the user in the DB with a generated reset token.
+    */
+
+    if(Date.now() - user.emailAuthTokenCreation < spamCooldown){
+        return res.status(402).json({error: 'please wait at least 15 seconds between sending emails'})
+    }
+    token = crypto.randomBytes(20).toString('hex');
+    await user.updateOne({emailAuthToken: token, emailAuthTokenCreation: Date.now()});
+
+
+    /*
+    * Prepare the email.
+    */
+    const url = 'http://' + req.headers.host.toString() + /authorize/ + token.toString()
+    const message = {
+        to: email,
+        from: 'no-reply@primaljet.com',
+        templateId: 'd-23227d40a12040e8be6404e3f1fd9b4b',
+        dynamicTemplateData: {
+            name: user.username,
+            link: url,
+        },
+    };
+
+
+    //@TODO: Properly handle these errors.
+    sgMail.send(message)
+        .then(response => res.json({status: 'email sent'}))
+    .catch(err => res.status(500).json({error: 'email cannot be sent'}));
+})); 
+
+/**
+ * @swagger
  * /authorize/{token}:
  *  get:
  *      description: Checks if the authorization reset token is valid
