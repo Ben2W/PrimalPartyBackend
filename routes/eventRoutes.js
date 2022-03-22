@@ -193,15 +193,10 @@ eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, catchAsync(async(r
 
 
 
-
-// Finished, take a closer look into storing dates in mongoose and sending them in js
-//Create a new event
 /**
- * @TODO Make the token, a JWT 
- * 
  * 
  * @swagger
- * /register:
+ * /events:
  *  post:
  *      description: Create a new event.
  *      tags:
@@ -226,35 +221,25 @@ eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, catchAsync(async(r
  *                              type: array
  *                              items:
  *                                  type: string
+ *                                  example: movie
  *                              description: tags for the event
- *                              example: movie, night, not-for-girls
- *                          firstName:
+ *                          address:
  *                              type: string
- *                              description: the user's first name
- *                              example: rick                       
- *                          lastName:
+ *                              description: the event address
+ *                              example: 1333 something lane                       
+ *                          date:
  *                              type: string
- *                              description: the user's last name
- *                              example: leinecker        
- *                          phone:
- *                              type: string
- *                              description: the user's phone number, must be 12 characters long
- *                              example: 199999999999
+ *                              description: the date, TODO, Make this datatime instead of a string
+ *                              example: Monday 
  * 
  *         
  *      responses:
  *          '200':
- *              description: email sent
+ *              description: new event
  *          '500':
- *              description: there is an issue creating the account (this needs to be better)
- *          '501':
- *              description: email unable to be sent
- *          '410':
- *              description: username and email already taken
- *          '411':
- *              description: email already taken
- *          '412':
- *              description: username already taken
+ *              description: There is an unexepected issue creating this event
+ *          '403':
+ *              description: not authorized
  *              
  */
 eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
@@ -264,11 +249,37 @@ eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
     const newEvent = new Event({name : name, description : description, tags : tags, address : address, date : date, admin : admin});
     await newEvent.save();
     
-    res.status(200).json({error:''});
+    res.status(200).json({newEvent});
 }))
 
 
 //Checks if the event exists and deletes it if so
+/**
+ * @swagger
+ * /events/{eventId}:
+ *  delete:
+ *      description: Checks if the event exists and deletes it if so
+ *      tags:
+ *        - Events
+ *        - Delete
+ *      parameters:
+ *          -   in: path
+ *              name: eventId
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "the ID of the event which you are trying to delete"
+ *          
+ *      responses:
+ *          '200':
+ *              description: successfully deleted event
+ *          '500':
+ *              description: unexepected error
+ *          '403':
+ *              description: you are not authenticated to do that
+ *              
+ */
 eventRouter.delete('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(req, res)=>{
     const {eventId} = req.params;
     const userId = req.user._id
@@ -292,7 +303,7 @@ eventRouter.delete('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(r
         return res.json({error:'Event does not exist'})
     }
     
-    res.status(200).json({error:''});
+    res.status(200).json({status:'successfully deleted event'});
 }))
 
 
