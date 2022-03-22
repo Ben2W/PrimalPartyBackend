@@ -67,15 +67,67 @@ eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(asy
 }))
 
 // View the details of a specific event
+/**
+ * @swagger
+ * /events/{eventId}:
+ *  get:
+ *      description: View the details of a specific event
+ *      tags:
+ *        - Events 
+ *        - Get
+ *      parameters:
+ *          -   in: path
+ *              name: eventId
+ *              schema:
+ *                  type: string
+ *                  example: 623018e31d596470d49769e0
+ *              required: true
+ *              description: "The ID of the event, from which we are the event info from"
+ *              
+ *      responses:
+ *          '200':
+ *              description: event information.
+ *          '500':
+ *              description: unexepected error
+ *          '403':
+ *              description: party was not found (you were not invited)"
+ *              
+ */
 eventRouter.get('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(req, res) => {
-	const { eventId } = req.params;
+	const { eventId } = req.params.eventId;
 	const currEvent = await Event.findById(eventId).populate('guests').populate('tasks').populate('admin')
 	res.json({ currEvent });
 }))
 
 // View the tasks of a specific event
+/**
+ * @swagger
+ * /events/{eventId}/tasks:
+ *  get:
+ *      description: View the guests of a specific event
+ *      tags:
+ *        - Events 
+ *        - Get
+ *      parameters:
+ *          -   in: path
+ *              name: eventId
+ *              schema:
+ *                  type: string
+ *                  example: 623018e31d596470d49769e0
+ *              required: true
+ *              description: "The ID of the event, from which we are pulling task information from"
+ *              
+ *      responses:
+ *          '200':
+ *              description: list of tasks.
+ *          '500':
+ *              description: unexepected error
+ *          '403':
+ *              description: party was not found (you were not invited)"
+ *              
+ */
 eventRouter.get('/events/:eventId/tasks', isLoggedIn, isInvited, catchAsync(async(req, res) => {
-	const { eventId } = req.params;
+	const { eventId } = req.params.eventId;
 	const currEvent = await Event.findById(eventId)
 	.populate({ 
 		path: 'tasks',
@@ -88,8 +140,49 @@ eventRouter.get('/events/:eventId/tasks', isLoggedIn, isInvited, catchAsync(asyn
 }))
 
 // View the details of a particular task
+/**
+ * @swagger
+ * /events/{eventId}/tasks/{taskId}:
+ *  get:
+ *      description: View the details of a particular task
+ *      tags:
+ *        - Events 
+ *        - Get
+ *      parameters:
+ *          -   in: path
+ *              name: eventId
+ *              schema:
+ *                  type: string
+ *                  example: 623018e31d596470d49769e0
+ *              required: true
+ *              description: "The ID of the event, from which we are the event info from"
+ *          -   in: path
+ *              name: taskId
+ *              schema:
+ *                  type: string
+ *                  example: 623018e31d596470d49769e0
+ *              required: true
+ *              description: "The ID of the task, from which we are the task info from"
+ * 
+ *              
+ *      responses:
+ *          '200':
+ *              description: task information.
+ *          '500':
+ *              description: unexepected error
+ *          '403':
+ *              description: party was not found (you were not invited)"
+ *              
+ */
+
+/**
+ * 
+ * @todo arent we supposed to pass in "isInvited"???
+ * 
+ * 
+ */
 eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, catchAsync(async(req, res) => {
-	const { taskId } = req.params;
+	const { taskId } = req.params.taskId;
 	const currTask = await Task.findById(taskId).populate('assignees')
 	res.json({ currTask });
 }))
