@@ -181,7 +181,7 @@ eventRouter.get('/events/:eventId/tasks', isLoggedIn, isInvited, catchAsync(asyn
  * 
  * 
  */
-eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, catchAsync(async(req, res) => {
+eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, isInvited, catchAsync(async(req, res) => {
 	const { taskId } = req.params.taskId;
 	const currTask = await Task.findById(taskId).populate('assignees')
 	res.json({ currTask });
@@ -309,8 +309,40 @@ eventRouter.delete('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(r
 
 
 
-//Add a guest to an event
 //Checks if the guest is already in the event and adds them if not
+
+/**
+ * @swagger
+ * /events/{eventId}/guests/{guestId}:
+ *  post:
+ *      description: Checks if the guest is already in the event and adds them if not
+ *      tags:
+ *        - Events
+ *        - Post
+ *      parameters:
+ *          -   in: path
+ *              name: eventId
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "the ID of the event which you are adding a guest to."
+ *          -   in: path
+ *              name: guestId
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "the ID of the guest which you are adding to the event."
+ *      responses:
+ *          '200':
+ *              description: successfully added guest
+ *          '500':
+ *              description: unexepected error
+ *          '403':
+ *              description: you are not authenticated to do that
+ *              
+ */
 eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
 
     const {eventId, guestId} = req.params;
