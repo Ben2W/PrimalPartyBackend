@@ -88,6 +88,7 @@ UserSchema.plugin(passportLocalMongoose, {
 
 //every time u run findByIdAndDelete on an instance of a user:
 //check if that user is admin for some event and if yes, then delete that event
+//if this user was assigned a task remove him from the assignees list
 
 UserSchema.post('findOneAndDelete', async function(user){
     const {_id} = user
