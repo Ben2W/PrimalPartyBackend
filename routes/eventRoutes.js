@@ -68,10 +68,21 @@ eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
 }))
 
 //Update event information
-//Check if the user is an admin and edit the evnt information if so
-eventRouter.put('/events', isLoggedIn, catchAsync(async(req, res)=>{
+//Check if the user is an admin and edit the event information if so
+//I would like to only update fields that have information in them
+//But for now I will update all fields with what is given in the JSON body
+eventRouter.put('/events/:eventId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
 
     const {eventId} = req.params;
+
+    const event = await Event.findById(eventId);
+
+    const {name=(event.name), description=(event.description), tags=(event.tags), address=(event.address), date=(event.date)} = req.body;
+
+    event.findOneAndUpdate({_id : eventId}, {$set: {name : name, description : description, tags : tags, address : address, date : date}});
+    
+
+
 
 
     
