@@ -64,7 +64,6 @@ eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(asy
 	const currEvent = await Event.findById(eventId).populate('guests')
     console.log(currEvent)
 	res.json({guests: currEvent.guests});
-    res.json({guests:'asdasdasad'});
 }))
 
 // View the details of a specific event
