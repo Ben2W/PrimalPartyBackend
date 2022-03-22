@@ -16,10 +16,10 @@ const TaskSchema = new Schema({
         type:String,
         maxlength: 100
     },
-    assignees: {
-        type: [Schema.Types.ObjectId],
+    assignees: [{
+        type: Schema.Types.ObjectId,
         ref: 'User'
-    },
+    }],
     done:{
         type:Boolean,
         required:true

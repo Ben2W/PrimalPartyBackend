@@ -6,7 +6,6 @@ const Event = require('../models/event')
 const { userSchema, eventSchema, taskSchema } = require('../schemas.js');
 const catchAsync = require('../utils/catchAsync')
 const {isLoggedIn, isAdmin, isInvited} = require('../middleware'); 
-const task = require('../models/task');
 
 
 
@@ -21,7 +20,6 @@ eventRouter.get('/events', isLoggedIn, catchAsync(async(req, res) => {
 eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(async(req, res) => {
 	const { eventId } = req.params;
 	const currEvent = await Event.findById(eventId).populate('guests')
-    console.log(currEvent)
 	res.json({guests: currEvent.guests});
 }))
 
@@ -86,6 +84,7 @@ eventRouter.put('/events/:eventId', isLoggedIn, isAdmin, catchAsync(async(req, r
     res.status(200).json({'error':''});
 }))
 
+
 //Update the task of an event
 //Check if event exists, if task exists, if task is part of event, if json has all required fields. Update task information if so.
 eventRouter.put('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
@@ -101,7 +100,9 @@ eventRouter.put('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsyn
 
     const {name=task.name, description=task.description, assignees=task.assignees, done=task.done} = req.body;
     if(name == '' || done == ''){return res.status(500).json({error:'Fields required'})}
-    await Task.findByIdAndUpdate(taskId, {$set: {name : name, description : description, $addToSet: {assignees : assignees}, done : done}}, {new: true, runValidators: true});
+
+    //check the adding to assignees part
+    await Task.findByIdAndUpdate(taskId, {$set: {name : name, description : description, assignees : assignees, done : done}}, {new: true, runValidators: true});
     
     res.status(200).json({'error':''});
 }))
