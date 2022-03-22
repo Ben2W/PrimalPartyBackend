@@ -6,8 +6,7 @@ const Event = require('../models/event')
 const { userSchema, eventSchema, taskSchema } = require('../schemas.js');
 const catchAsync = require('../utils/catchAsync')
 const {isLoggedIn, isAdmin, isInvited} = require('../middleware'); 
-const { Mongoose } = require('mongoose');
-const { findByIdAndDelete } = require('../models/task');
+const task = require('../models/task');
 
 
 
@@ -18,18 +17,19 @@ eventRouter.get('/events', isLoggedIn, catchAsync(async(req, res) => {
 	res.json({ events })
 }))
 
+// View the guests of a specific event
+eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(async(req, res) => {
+	const { eventId } = req.params;
+	const currEvent = await Event.findById(eventId).populate('guests')
+    console.log(currEvent)
+	res.json({guests: currEvent.guests});
+}))
+
 // View the details of a specific event
 eventRouter.get('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(req, res) => {
 	const { eventId } = req.params;
 	const currEvent = await Event.findById(eventId).populate('guests').populate('tasks').populate('admin')
 	res.json({ currEvent });
-}))
-
-// View the guests of a specific event
-eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(async(req, res) => {
-	const { eventId } = req.params;
-	const currEvent = await Event.findById(eventId).populate('guests')
-	res.json({guests: currEvent.guests});
 }))
 
 // View the tasks of a specific event
@@ -57,14 +57,17 @@ eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, catchAsync(async(r
 *	Nick's Routes
 */
 
+
+// Finished, take a closer look into storing dates in mongoose and sending them in js
 //Create a new event
 eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
 
-    const {name, description, tags, address, date, admin, guests, tasks} = req.body;
-    const newEvent = new Event({name : name, description : description, tags : tags, address : address, date : date, admin : admin, guests : guests, tasks : tasks});
+    const {name, description="", tags=[], address, date} = req.body;
+    const admin = await User.findById(req.user._id)
+    const newEvent = new Event({name : name, description : description, tags : tags, address : address, date : date, admin : admin});
     await newEvent.save();
     
-    res.status(200).json({'error':''});
+    res.status(200).json({error:''});
 }))
 
 //Update event information
@@ -104,82 +107,105 @@ eventRouter.put('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsyn
 }))
 
 
-//Delete an event
 //Checks if the event exists and deletes it if so
-eventRouter.delete('/events/:eventId', isLoggedIn, catchAsync(async(req, res)=>{
+eventRouter.delete('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(req, res)=>{
     const {eventId} = req.params;
+    const userId = req.user._id
+    const event = await Event.findById(eventId)
+    const user = await User.findById(userId)
+    const admin = event.admin
+
     try
     {
-        await Event.findByIdAndDelete(eventId);
+        if(admin._id.toString() == userId){
+            await Event.findByIdAndDelete(eventId);
+        }
+
+        else{
+            await Event.findByIdAndUpdate(event._id, {$pull: {guests: user._id}}, {new: true, runValidators: true})
+            await User.findByIdAndUpdate(user._id, {$pull: {events: event._id}}, {new: true, runValidators: true})
+        }
     }
     catch(err)
     {
         return res.json({error:'Event does not exist'})
     }
     
-    res.status(200).json({'error':''});
+    res.status(200).json({error:''});
 }))
 
 
 //Add a guest to an event
 //Checks if the guest is already in the event and adds them if not
-eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, catchAsync(async(req, res)=>{
+eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
 
     const {eventId, guestId} = req.params;
     const event = await Event.findById(eventId);
-    
-    if(event == null){return res.json({error:'Event does not exist'})}
-    if(event.guests.indexOf(guestId) != -1){ return res.json({error:'Guest already found in guest list'})}
+    const guest = await User.findById(guestId)
 
-    event.guests.push(guestId);
-    event.save();
-    res.status(200).json({'error':''});
+    if(!event){return res.status(500).json({error:'Event does not exist'})}
+    if(event.guests.indexOf(guestId) != -1){ return res.status(500).json({error:'Guest already found in guest list'})}
+
+    await Event.findByIdAndUpdate(event._id, { $addToSet: { guests: guest } }, {new: true, runValidators: true})
+    await User.findByIdAndUpdate(guest._id, { $addToSet: { events: event } }, {new: true, runValidators: true})
+
+    res.status(200).json({error:''});
 }))
 
 //Delete a guest from an event
 //Checks if the guest is in the list and deletes it based on index if so
-eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, catchAsync(async(req, res)=>{
+eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
 
     const {eventId, guestId} = req.params;
     const event = await Event.findById(eventId);
 
-    if(event == null){return res.json({error:'Event does not exist'})}
+    if(!event){return res.status(500).json({error:'Event does not exist'})}
     const guestIndex = event.guests.indexOf(guestId);
-    if(guestIndex == -1){ return res.json({error:'Guest not found in guest list'})}
+    if(guestIndex == -1){ return res.status(500).json({error:'Guest not found in guests list'})}
 
-    event.guests.splice(guestIndex, 1);
-    event.save();
-    res.status(200).json({'error':''});
+    if(event.admin._id.toString() == guestId){
+        return res.status(500).json({error:"Cannot delete admin from the event"})
+    }
+
+    await Event.findByIdAndUpdate(event._id, {$pull: {guests: guestId}}, {new: true, runValidators: true})
+    await User.findByIdAndUpdate(req.user._id, {$pull: {events: event._id}}, {new: true, runValidators: true})
+    await Task.updateMany({}, {$pull: {assignees: req.user._id}}, {new: true, runValidators: true})
+    res.status(200).json({error:''});
 }))
+
 
 //Add a task to an event
 //Checks if the task is already in the event and adds it if not
-eventRouter.post('/events/:eventId/tasks/:taskId', isLoggedIn, catchAsync(async(req, res)=>{
+eventRouter.post('/events/:eventId/tasks', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
 
-    const {eventId,taskId} = req.params;
+    const {eventId} = req.params;
+    const {name, description="", assignees = []} = req.body
+    const task = new Task({name:name, description:description, assignees:assignees, done:false, event:eventId})
+    
+    await task.save()
     const event = await Event.findById(eventId);
     
-    if(event == null){return res.json({error:'Event does not exist'})}
-    if(event.tasks.indexOf(taskId) != -1){ return res.json({error:'Task already found in task list'})}
+    if(!event){return res.json({error:'Event does not exist'})}
 
-    event.tasks.push(taskId);
-    event.save();
-    res.status(200).json({'error':''});
+    await Event.findByIdAndUpdate(event._id, { $addToSet: { tasks: task } }, {new: true, runValidators: true})
+
+    res.status(200).json({error:''});
 }))
+
 
 //Delete a task from an event
 //Checks if the task is in the list and deletes it based on index if so
-eventRouter.delete('/events/:eventId/tasks/:taskId', isLoggedIn, catchAsync(async(req, res)=>{
+eventRouter.delete('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
 
     const {eventId, taskId} = req.params;
     const event = await Event.findById(eventId);
 
-    if(event == null){return res.json({error:'Event does not exist'})}
+    if(!event){return res.status(500).json({error:'Event does not exist'})}
     const taskIndex = event.tasks.indexOf(taskId);
     if(taskIndex == -1){ return res.json({error:'task not found in task list'})}
 
-    event.tasks.splice(taskIndex, 1);
-    event.save();
+    await Event.findByIdAndUpdate(event._id, {$pull: {tasks: taskId}}, {new: true, runValidators: true})
+    await Task.findByIdAndDelete(taskId)
     res.status(200).json({'error':''});
 }))
 

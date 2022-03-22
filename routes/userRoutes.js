@@ -173,15 +173,13 @@ userRouter.post('/login', (req, res, next) => {
 
 
   passport.authenticate('local', function(err, user, info) {
-    if (err) { return res.json({error:'error happened when logging in1'}) }
-    if (!user) { 
-        return res.json({error:'error happened when logging in2'}
+    if (err) { return res.json({error:'error happened when logging in'}) }
 
-    ) }
+    // This error throws if email is not authorized OR the username is not valid
+    if (!user) { return res.json({error:'this user cannot be found'}) }
     req.logIn(user, function(err) {
       if (err) { return res.json({error:'login failed'}) }
       return res.json({error:''})
-
     });
   })(req, res, next);
 });
@@ -403,7 +401,7 @@ userRouter.post('/login', (req, res, next) => {
         if (err) {
             return res.status(500).json({error: 'there has been an issue logging in to your account'})
         }
-        res.status(200).json({error:''})
+        res.status(200).json({error:'Accounted Authenticated and logged in'})
         
     })
 
