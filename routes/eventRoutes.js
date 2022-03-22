@@ -68,12 +68,12 @@ eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
 }))
 
 //Update event information
-//
-eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
+//Check if the user is an admin and edit the evnt information if so
+eventRouter.put('/events', isLoggedIn, catchAsync(async(req, res)=>{
 
-    const {name, description, tags, address, date, admin, guests, tasks} = req.body;
-    const newEvent = new Event({name : name, description : description, tags : tags, address : address, date : date, admin : admin, guests : guests, tasks : tasks});
-    await newEvent.save();
+    const {eventId} = req.params;
+
+
     
     res.status(200).json({'error':''});
 }))
