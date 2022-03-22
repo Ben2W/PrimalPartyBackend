@@ -164,7 +164,7 @@ emailRouter.get('/reset/:token', catchAsync(async(req, res, next) => {
     *  *NOTE* Azure will set the environment variable to 15 seconds regardless of what you set spamCooldown to.
     */
     expireTime = 86400000 //1 day in ms
-    if(process.env.EMAIL_RESET_EXPIRE_TIME !== 'undefined'){
+    if(process.env.EMAIL_RESET_EXPIRE_TIME != undefined){
         spamCooldown = process.env.EMAIL_RESET_EXPIRE_TIME
     }
 
@@ -235,7 +235,7 @@ emailRouter.post('/reset/:token', catchAsync(async(req, res, next) => {
     *  *NOTE* Azure will set the environment variable to 15 seconds regardless of what you set spamCooldown to.
     */
     expireTime = 86400000 //1 day in ms
-    if(process.env.EMAIL_RESET_EXPIRE_TIME !== 'undefined'){
+    if(process.env.EMAIL_RESET_EXPIRE_TIME != undefined){
         spamCooldown = process.env.EMAIL_RESET_EXPIRE_TIME
     }
 

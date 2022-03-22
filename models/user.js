@@ -16,7 +16,7 @@ const UserSchema = new Schema({
     },
     username:{
         type:String,
-        required:true
+        required:true,
     },
     phone:{
         type:String,
@@ -26,7 +26,19 @@ const UserSchema = new Schema({
     },
     email:{
         type:String,
-        required:true
+        required:true,
+    },
+    emailAuthenticated:{
+        type:Boolean,
+        default: false
+    },
+    emailAuthToken:{
+        data: String,
+        default: ''
+    },
+    emailAuthTokenCreation:{
+        type: Date,
+        default: Date.now
     },
     resetToken:{
         data: String,
@@ -59,7 +71,20 @@ const UserSchema = new Schema({
 }, {timestamps:true})
 
 
-UserSchema.plugin(passportLocalMongoose);
+UserSchema.plugin(passportLocalMongoose, {
+
+
+  
+    //Usernames must be unique, but we define this in the schema so there is no reason to make another unneccesary query.
+    usernameUnique: false,
+
+  findByUsername: function(model, queryParameters) {
+    // Add additional query parameter - AND condition - active: true
+    queryParameters.emailAuthenticated = true;
+    return model.findOne(queryParameters);
+  }
+
+});
 
 //every time u run findByIdAndDelete on an instance of a user:
 //check if that user is admin for some event and if yes, then delete that event

@@ -6,6 +6,7 @@ const swaggerUi = require('swagger-ui-express');
 
 // Extended: https://swagger.io/specification/#infoObject
 // Info on documenting https://dev.to/kabartolo/how-to-document-an-express-api-with-swagger-ui-and-jsdoc-50do
+// A useful video https://www.youtube.com/watch?v=S8kmHtQeflo
 const swaggerOptions = {
     swaggerDefinition: {
         openapi: "3.0.0",
