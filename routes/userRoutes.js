@@ -99,7 +99,8 @@ var crypto = require("crypto")
          * Set BYPASS_EMAIL_AUTH = true in your enviornment variable to bypass email authorization
          * 
          */
-        if(process.env.BYPASS_EMAIL_AUTH == true) {
+
+        if(process.env.BYPASS_EMAIL_AUTH == 'true') {
             await user.updateOne({emailAuthenticated: true});
             return res.status(200).json({status: 'Registered account and authorized email'})
         } 
