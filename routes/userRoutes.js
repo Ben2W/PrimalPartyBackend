@@ -60,9 +60,17 @@ var crypto = require("crypto")
  *         
  *      responses:
  *          '200':
- *              description: success
+ *              description: email sent
  *          '500':
  *              description: there is an issue creating the account (this needs to be better)
+ *          '501':
+ *              description: email unable to be sent
+ *          '410':
+ *              description: username and email already taken
+ *          '411':
+ *              description: email already taken
+ *          '412':
+ *              description: username already taken
  *              
  */
  userRouter.post('/register', catchAsync(async(req, res, next) => {
@@ -85,19 +93,7 @@ var crypto = require("crypto")
         const user = new User(rest);
         const registeredUser = await User.register(user, password);
 
-        /* spamCooldown is a dev feature:
-        *  set to 0 for no cooldown
-        *  set to 15000 for a 15 second email cooldown:
-        *  
-        *  *NOTE* Azure will set the environment variable to 15 seconds regardless of what you set spamCooldown to.
-        *             
-        */
-        spamCooldown = 1500
-
-        if(process.env.RESET_SPAM_COOLDOWN != undefined){
-            spamCooldown = process.env.RESET_SPAM_COOLDOWN
-        }
-        
+        // Generate the token and add it to the DB
         token = crypto.randomBytes(20).toString('hex');
         await user.updateOne({emailAuthToken: token, emailAuthTokenCreation: Date.now()});
         
@@ -119,10 +115,9 @@ var crypto = require("crypto")
         //@TODO: Properly handle these errors.
         sgMail.send(message)
             .then(response => res.json({status: 'email sent'}))
-        .catch(err => res.status(500).json({error: 'email cannot be sent'}));
+        .catch(err => res.status(501).json({error: 'email cannot be sent'}));
 
     } catch (e) {
-
         return res.status(500).json({error: 'there has been an issue creating an account'})
     }
  }))
