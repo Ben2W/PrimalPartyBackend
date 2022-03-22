@@ -74,17 +74,13 @@ eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
 eventRouter.put('/events/:eventId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
 
     const {eventId} = req.params;
-
+    
     const event = await Event.findById(eventId);
+    if(!event){return res.status(500).json({error:'Event does not exist'})}
 
     const {name=(event.name), description=(event.description), tags=(event.tags), address=(event.address), date=(event.date)} = req.body;
 
-    event.findOneAndUpdate({_id : eventId}, {$set: {name : name, description : description, tags : tags, address : address, date : date}});
-    
-
-
-
-
+    await Event.findByIdAndUpdate(eventId, {$set: {name : name, description : description, tags : tags, address : address, date : date}});
     
     res.status(200).json({'error':''});
 }))
