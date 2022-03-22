@@ -15,7 +15,6 @@ var crypto = require("crypto")
 
 // @TODO Resend Token
 // @TODO delete user (if an attacker is using someone else' email AND the user has not been authorized yet.)
-// @TODO Approve token
 
 /**
  * @TODO Make the token, a JWT 
@@ -100,7 +99,7 @@ var crypto = require("crypto")
          * Set BYPASS_EMAIL_AUTH = true in your enviornment variable to bypass email authorization
          * 
          */
-        if(process.env.BYPASS_EMAIL_AUTH) {
+        if(process.env.BYPASS_EMAIL_AUTH == true) {
             await user.updateOne({emailAuthenticated: true});
             return res.status(200).json({status: 'Registered account and authorized email'})
         } 
