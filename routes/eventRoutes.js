@@ -172,6 +172,8 @@ eventRouter.get('/events/:eventId/tasks', isLoggedIn, isInvited, catchAsync(asyn
  *              description: unexepected error
  *          '403':
  *              description: party was not found (you were not invited)"
+ *          '404':
+ *              description: task does not exist
  *              
  */
 
@@ -182,8 +184,10 @@ eventRouter.get('/events/:eventId/tasks', isLoggedIn, isInvited, catchAsync(asyn
  * 
  */
 eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, isInvited, catchAsync(async(req, res) => {
-	const { taskId } = req.params.taskId;
+	const { taskId } = req.params;
 	const currTask = await Task.findById(taskId).populate('assignees')
+    if(!currTask) return res.status(411).json({error:'Task does not exist'})
+
 	res.json({ currTask });
 }))
 
@@ -364,12 +368,51 @@ eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchA
 
 //Delete a guest from an event
 //Checks if the guest is in the list and deletes it based on index if so
+
+/**
+ * @swagger
+ * /events/{eventId}/guests/{guestId}:
+ *  delete:
+ *      description: Deletes a guest if the guest is in the event
+ *      tags:
+ *        - Events
+ *        - Delete
+ *      parameters:
+ *          -   in: path
+ *              name: eventId
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "the ID of the event which you are deleting the guest from."
+ *          -   in: path
+ *              name: guestId
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "the ID of the guest which you are deleting from the event."
+ *      responses:
+ *          '200':
+ *              description: successfully deleted the guest
+ *          '500':
+ *              description: unexepected error
+ *          '403':
+ *              description: you are not authenticated to do that
+ *          '404':
+ *              description: Event does not exist
+ *          '410':
+ *              description: guest not in list
+ *          '411':
+ *              description: event does not exist
+ *              
+ */
 eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
 
     const {eventId, guestId} = req.params;
     const event = await Event.findById(eventId);
 
-    if(!event){return res.status(500).json({error:'Event does not exist'})}
+    if(!event){return res.status(404).json({error:'Event does not exist'})}
     const guestIndex = event.guests.indexOf(guestId);
     if(guestIndex == -1){ return res.status(500).json({error:'Guest not found in guests list'})}
 
@@ -380,22 +423,80 @@ eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catc
     await Event.findByIdAndUpdate(event._id, {$pull: {guests: guestId}}, {new: true, runValidators: true})
     await User.findByIdAndUpdate(req.user._id, {$pull: {events: event._id}}, {new: true, runValidators: true})
     await Task.updateMany({}, {$pull: {assignees: req.user._id}}, {new: true, runValidators: true})
-    res.status(200).json({error:''});
+    res.status(200).json({event});
 }))
 
 
 //Add a task to an event
 //Checks if the task is already in the event and adds it if not
+
+/**
+ * @swagger
+ * /events/{eventId}/tasks:
+ *  post:
+ *      description: Adds a task in the event if there isn't a task.
+ *      tags:
+ *        - Events
+ *        - Post
+ *      parameters:
+ *          -   in: path
+ *              name: eventId
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "the ID of the event which you are adding a guest to."
+ *      requestBody:
+ *          required: true
+ *          content:
+ *              application/x-www-form-urlencoded:
+ *                  schema:
+ *                      type: object
+ *                      properties:
+ *                          name:
+ *                              type: string
+ *                              description: name of the task
+ *                              example: Bring Soda
+ *                          description:
+ *                              type: string
+ *                              description: description of the task
+ *                              example: Bring Pepsi, Coke, and Fanta
+ *                          assignees:
+ *                              type: array
+ *                              items:
+ *                                  type: string
+ *                                  example: asdas7d6a879yhi
+ *                              description: guests to assign 
+ *                      required:
+ *                        - name
+ *                      
+ * 
+ *      responses:
+ *          '200':
+ *              description: successfully added guest
+ *          '500':
+ *              description: unexepected error
+ *          '403':
+ *              description: you are not authenticated to do that
+ *          '404':
+ *              description: Event does not exist
+ *          '405':
+ *              description: Name cannot be blank
+ *              
+ */
 eventRouter.post('/events/:eventId/tasks', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
 
     const {eventId} = req.params;
     const {name, description="", assignees = []} = req.body
+    
+    if(name == '') return res.status(405).json({error:"name cannot be blank"})
+
     const task = new Task({name:name, description:description, assignees:assignees, done:false, event:eventId})
     
     await task.save()
     const event = await Event.findById(eventId);
     
-    if(!event){return res.json({error:'Event does not exist'})}
+    if(!event) return res.status(404).json({error:"Event does not exist"})
 
     await Event.findByIdAndUpdate(event._id, { $addToSet: { tasks: task } }, {new: true, runValidators: true})
 
@@ -405,18 +506,54 @@ eventRouter.post('/events/:eventId/tasks', isLoggedIn, isAdmin, catchAsync(async
 
 //Delete a task from an event
 //Checks if the task is in the list and deletes it based on index if so
+/**
+ * @swagger
+ * /events/{eventId}/tasks/{taskId}:
+ *  delete:
+ *      description: Deletes a task if the task is in the event
+ *      tags:
+ *        - Events
+ *        - Delete
+ *      parameters:
+ *          -   in: path
+ *              name: eventId
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "the ID of the event which you are deleting the guest from."
+ *          -   in: path
+ *              name: taskId
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "the ID of the task which you are deleting from the event."
+ *      responses:
+ *          '200':
+ *              description: successfully deleted the task
+ *          '500':
+ *              description: unexepected error
+ *          '403':
+ *              description: you are not authenticated to do that
+ *          '404':
+ *              description: task does not exist
+ *          '410':
+ *              description: task not in list
+ *              
+ */
 eventRouter.delete('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
 
     const {eventId, taskId} = req.params;
     const event = await Event.findById(eventId);
 
-    if(!event){return res.status(500).json({error:'Event does not exist'})}
+    if(!event){return res.status(404).json({error:'task does not exist'})}
     const taskIndex = event.tasks.indexOf(taskId);
-    if(taskIndex == -1){ return res.json({error:'task not found in task list'})}
+    if(taskIndex == -1) {return res.status(410).json({error:'task does not in list'})}
 
     await Event.findByIdAndUpdate(event._id, {$pull: {tasks: taskId}}, {new: true, runValidators: true})
     await Task.findByIdAndDelete(taskId)
-    res.status(200).json({'error':''});
+    res.status(200).json({event});
 }))
 
 module.exports = eventRouter;
