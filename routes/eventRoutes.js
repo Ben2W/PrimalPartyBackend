@@ -35,7 +35,7 @@ eventRouter.get('/events', isLoggedIn, catchAsync(async(req, res) => {
 // View the guests of a specific event
 /**
  * @swagger
- * /events/:eventId/guests:
+ * /events/{eventId}/guests:
  *  get:
  *      description: View the guests of a specific event
  *      tags:
@@ -55,12 +55,16 @@ eventRouter.get('/events', isLoggedIn, catchAsync(async(req, res) => {
  *              description: list of guests.
  *          '500':
  *              description: unexepected error
+ *          '403':
+ *              description: party was not found (you were not invited)"
+ *              
  */
 eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(async(req, res) => {
-	const { eventId } = req.params;
+	const { eventId } = req.params.eventId;
 	const currEvent = await Event.findById(eventId).populate('guests')
     console.log(currEvent)
 	res.json({guests: currEvent.guests});
+    res.json({guests:'asdasdasad'});
 }))
 
 // View the details of a specific event
