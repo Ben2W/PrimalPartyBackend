@@ -5,7 +5,8 @@ const Event = require('../models/event')
 
 const { userSchema, eventSchema, taskSchema } = require('../schemas.js');
 const catchAsync = require('../utils/catchAsync')
-const {isLoggedIn, isAdmin, isInvited, removeFromArray} = require('../middleware'); 
+const {isLoggedIn, isAdmin, isInvited} = require('../middleware'); 
+const task = require('../models/task');
 
 
 
@@ -85,8 +86,8 @@ eventRouter.delete('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(r
         }
 
         else{
-            await Event.findByIdAndUpdate(event._id, {$pull: {guests: user._id}})
-            await User.findByIdAndUpdate(user._id, {$pull: {events: event._id}})
+            await Event.findByIdAndUpdate(event._id, {$pull: {guests: user._id}}, {new: true, runValidators: true})
+            await User.findByIdAndUpdate(user._id, {$pull: {events: event._id}}, {new: true, runValidators: true})
         }
     }
     catch(err)
@@ -109,13 +110,12 @@ eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchA
     if(!event){return res.status(500).json({error:'Event does not exist'})}
     if(event.guests.indexOf(guestId) != -1){ return res.status(500).json({error:'Guest already found in guest list'})}
 
-    await Event.findByIdAndUpdate(event._id, { $addToSet: { guests: guest } })
-    await User.findByIdAndUpdate(guest._id, { $addToSet: { events: event } })
+    await Event.findByIdAndUpdate(event._id, { $addToSet: { guests: guest } }, {new: true, runValidators: true})
+    await User.findByIdAndUpdate(guest._id, { $addToSet: { events: event } }, {new: true, runValidators: true})
 
     res.status(200).json({error:''});
 }))
 
-//needs fixing
 //Delete a guest from an event
 //Checks if the guest is in the list and deletes it based on index if so
 eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
@@ -123,13 +123,18 @@ eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catc
     const {eventId, guestId} = req.params;
     const event = await Event.findById(eventId);
 
-    if(!event){return res.json({error:'Event does not exist'})}
+    if(!event){return res.status(500).json({error:'Event does not exist'})}
     const guestIndex = event.guests.indexOf(guestId);
-    if(guestIndex == -1){ return res.json({error:'Guest not found in guest list'})}
+    if(guestIndex == -1){ return res.status(500).json({error:'Guest not found in guests list'})}
 
-    event.guests.splice(guestIndex, 1);
-    event.save();
-    res.status(200).json({'error':''});
+    if(event.admin._id.toString() == guestId){
+        return res.status(500).json({error:"Cannot delete admin from the event"})
+    }
+
+    await Event.findByIdAndUpdate(event._id, {$pull: {guests: guestId}}, {new: true, runValidators: true})
+    await User.findByIdAndUpdate(req.user._id, {$pull: {events: event._id}}, {new: true, runValidators: true})
+    await Task.updateMany({}, {$pull: {assignees: req.user._id}}, {new: true, runValidators: true})
+    res.status(200).json({error:''});
 }))
 
 
@@ -146,12 +151,12 @@ eventRouter.post('/events/:eventId/tasks', isLoggedIn, isAdmin, catchAsync(async
     
     if(!event){return res.json({error:'Event does not exist'})}
 
-    await Event.findByIdAndUpdate(event._id, { $addToSet: { tasks: task } })
+    await Event.findByIdAndUpdate(event._id, { $addToSet: { tasks: task } }, {new: true, runValidators: true})
 
     res.status(200).json({error:''});
 }))
 
-//needs fixing
+
 //Delete a task from an event
 //Checks if the task is in the list and deletes it based on index if so
 eventRouter.delete('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
@@ -159,12 +164,12 @@ eventRouter.delete('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchA
     const {eventId, taskId} = req.params;
     const event = await Event.findById(eventId);
 
-    if(event == null){return res.json({error:'Event does not exist'})}
+    if(!event){return res.status(500).json({error:'Event does not exist'})}
     const taskIndex = event.tasks.indexOf(taskId);
     if(taskIndex == -1){ return res.json({error:'task not found in task list'})}
 
-    event.tasks.splice(taskIndex, 1);
-    event.save();
+    await Event.findByIdAndUpdate(event._id, {$pull: {tasks: taskId}}, {new: true, runValidators: true})
+    await Task.findByIdAndDelete(taskId)
     res.status(200).json({'error':''});
 }))
 
