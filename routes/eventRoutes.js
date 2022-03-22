@@ -57,18 +57,18 @@ eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, catchAsync(async(r
 *	Nick's Routes
 */
 
-//Updates the info of a specific event
-//Checks if user is admin and updates information if so
-eventRouter.put('/events/:eventId', isLoggedIn, catchAsync(async(req, res)=>{
+//Create a new event
+eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
 
-    const {eventId} = req.params;
+    const {name, description, tags, address, date, admin, guests, tasks} = req.body;
+    const newEvent = new Event({name : name, description : description, tags : tags, address : address, date : date, admin : admin, guests : guests, tasks : tasks});
     await newEvent.save();
     
     res.status(200).json({'error':''});
 }))
 
-
-//Create a new event
+//Update event information
+//
 eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
 
     const {name, description, tags, address, date, admin, guests, tasks} = req.body;
