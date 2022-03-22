@@ -92,6 +92,18 @@ var crypto = require("crypto")
         const {password, ...rest} = req.body
         const user = new User(rest);
         const registeredUser = await User.register(user, password);
+        
+
+        /**
+         * Bypasses email authorization
+         * 
+         * Set BYPASS_EMAIL_AUTH = true in your enviornment variable to bypass email authorization
+         * 
+         */
+        if(process.env.BYPASS_EMAIL_AUTH) {
+            await user.updateOne({emailAuthenticated: true});
+            return res.status(200).json({status: 'Registered account and authorized email'})
+        } 
 
         // Generate the token and add it to the DB
         token = crypto.randomBytes(20).toString('hex');
@@ -124,6 +136,10 @@ var crypto = require("crypto")
 
 
 /**
+ * @TODO Add another route to send another authorization token when you fail a login because the email isn't authorized
+ * @TODO Check if the login information is correct, but if the email is not authorized (This might be really difficult to implement)
+ * 
+ * 
  * @swagger
  * /login:
  *  post:
@@ -153,10 +169,16 @@ var crypto = require("crypto")
  *              
  */
 userRouter.post('/login', (req, res, next) => {
+
+
+
+
   passport.authenticate('local', function(err, user, info) {
-    
-    if (err) { return res.json({error:'error happened when logging in'}) }
-    if (!user) { return res.json({error:'error happened when logging in'}) }
+    if (err) { return res.json({error:'error happened when logging in1'}) }
+    if (!user) { 
+        return res.json({error:'error happened when logging in2'}
+
+    ) }
     req.logIn(user, function(err) {
       if (err) { return res.json({error:'login failed'}) }
       return res.json({error:''})
@@ -165,7 +187,129 @@ userRouter.post('/login', (req, res, next) => {
   })(req, res, next);
 });
 
+/**
+ * @swagger
+ * /authorize/{token}:
+ *  get:
+ *      description: Checks if the authorization reset token is valid
+ *      parameters:
+ *          -   in: path
+ *              name: token
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "the authorization token, the token will look like http://primalparty.com/authorize/[token]"
+ *          
+ *      responses:
+ *          '200':
+ *              description: token valid
+ *          '500':
+ *              description: unexepected error
+ *          '400':
+ *              description: not a valid token
+ *          '401':
+ *              description: this token is expired
+ */
+ userRouter.get('/authorize/:token', catchAsync(async(req, res, next) => {
 
+
+    console.log(req.params.token);
+    const user = await User.findOne({emailAuthToken: req.params.token});
+
+    if(!user){
+        return res.status(400).json({error: 'this token is invalid'});
+    }
+
+
+    /* 
+    *  
+    *  Set expire time to the amount of time a token is valid. Azure will use a environment variable so changing "expireTime" wont affect the remote server.
+    *  
+    *  *NOTE* Azure will set the environment variable to 15 seconds regardless of what you set spamCooldown to.
+    */
+    expireTime = 86400000 //1 day in ms
+    if(process.env.EMAIL_RESET_EXPIRE_TIME != undefined){
+        spamCooldown = process.env.EMAIL_RESET_EXPIRE_TIME
+    }
+
+    /*
+    * If the token is expired, error.
+    *
+    */
+
+    if(expireTime + user.emailAuthTokenCreation.getTime()  < Date.now()){
+        res.status(401).json({error: 'token expired'});
+    }
+
+    res.json({status: 'this token is valid'})
+
+}));
+
+/**
+ * @swagger
+ * /authorize/{token}:
+ *  post:
+ *      description: Authorizes a user to log in, using a token sent to the user's email.
+ *      parameters:
+ *          -   in: path
+ *              name: token
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "the authorize token the token will look like http://primalparty.com/reset/[token]"
+ *          
+ *      responses:
+ *          '200':
+ *              description: success
+ *          '500':
+ *              description: unexepected error
+ *          '400':
+ *              description: user does not exist
+ *          '401':
+ *              description: token has expired
+ *              
+ */
+ userRouter.post('/authorize/:token', catchAsync(async(req, res, next) => {
+    const user = await User.findOne({emailAuthToken: req.params.token});
+
+    if(!user){
+        return res.status(400).json({error: 'this token is invalid'});
+    }
+
+
+     /* 
+    *  
+    *  Set expire time to the amount of time a token is valid. Azure will use a environment variable so changing "expireTime" wont affect the remote server.
+    *  
+    *  *NOTE* Azure will set the environment variable to 15 seconds regardless of what you set spamCooldown to.
+    */
+    expireTime = 86400000 //1 day in ms
+    if(process.env.EMAIL_RESET_EXPIRE_TIME != undefined){
+        spamCooldown = process.env.EMAIL_RESET_EXPIRE_TIME
+    }
+
+    /*
+    * If the token is expired, error.
+    *
+    */
+    if(expireTime + user.emailAuthTokenCreation.getTime()  < Date.now()){
+        res.status(401).json({error: 'token expired'});
+    }
+
+    await user.updateOne({emailAuthenticated: true});
+
+    
+    req.login(user, err => {
+        if (err) {
+            return res.status(500).json({error: 'there has been an issue logging in to your account'})
+        }
+        res.status(200).json({error:''})
+        
+    })
+
+}));
 
 /**
  * @swagger
