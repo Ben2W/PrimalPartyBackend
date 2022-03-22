@@ -34,7 +34,10 @@ module.exports.isInvited = catchAsync(async (req, res, next) => {
 
 module.exports.isAdmin = catchAsync(async (req, res, next) => {
     const { eventId } = req.params;
+
     const event = await Event.findById(eventId)
+    if(!event) return res.status(404).json({error:"event not found"})
+    
     if (event.admin._id.toString() != req.user._id){
         return res.status(403).json({error:"you have to be admin to fulfill that task"})
     }else{

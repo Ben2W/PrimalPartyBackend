@@ -177,7 +177,7 @@ eventRouter.get('/events/:eventId/tasks', isLoggedIn, isInvited, catchAsync(asyn
 
 /**
  * 
- * @todo arent we supposed to pass in "isInvited"???
+ * @todo we added IsInvited middleware, test this endpoint
  * 
  * 
  */
@@ -341,6 +341,10 @@ eventRouter.delete('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(r
  *              description: unexepected error
  *          '403':
  *              description: you are not authenticated to do that
+ *          '410':
+ *              description: guest already found in list
+ *          '411':
+ *              description: event does not exist
  *              
  */
 eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
@@ -349,8 +353,8 @@ eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchA
     const event = await Event.findById(eventId);
     const guest = await User.findById(guestId)
 
-    if(!event){return res.status(500).json({error:'Event does not exist'})}
-    if(event.guests.indexOf(guestId) != -1){ return res.status(500).json({error:'Guest already found in guest list'})}
+    if(!event){return res.status(411).json({error:'Event does not exist'})}
+    if(event.guests.indexOf(guestId) != -1){ return res.status(410).json({error:'Guest already found in guest list'})}
 
     await Event.findByIdAndUpdate(event._id, { $addToSet: { guests: guest } }, {new: true, runValidators: true})
     await User.findByIdAndUpdate(guest._id, { $addToSet: { events: event } }, {new: true, runValidators: true})
