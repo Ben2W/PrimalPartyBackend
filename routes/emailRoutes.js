@@ -23,6 +23,9 @@ var crypto = require("crypto")
  * /forgot:
  *  put:
  *      description: Reset a users password by sending them an email with a reset link.
+ *      tags:
+ *        - ResetPassword
+ *        - Put
  *      requestBody:
  *          required: true
  *          content:
@@ -127,6 +130,9 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
  * /reset/{token}:
  *  get:
  *      description: Checks if the password reset token is valid
+ *      tags:
+ *        - ResetPassword
+ *        - Get
  *      parameters:
  *          -   in: path
  *              name: token
@@ -188,6 +194,9 @@ emailRouter.get('/reset/:token', catchAsync(async(req, res, next) => {
  * /reset/{token}:
  *  post:
  *      description: Changes account associated with email with a password, given a reset token.
+ *      tags:
+ *        - ResetPassword
+ *        - Post
  *      parameters:
  *          -   in: path
  *              name: token

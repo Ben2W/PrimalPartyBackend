@@ -24,6 +24,9 @@ var crypto = require("crypto")
  * /register:
  *  post:
  *      description: Registers a user.
+ *      tags:
+ *        - UserAuthentication
+ *        - Post
  *      requestBody:
  *          required: true
  *          content:
@@ -143,6 +146,9 @@ var crypto = require("crypto")
  * /login:
  *  post:
  *      description: Logs in a user
+ *      tags:
+ *        - UserAuthentication
+ *        - Post
  *      requestBody:
  *          required: true
  *          content:
@@ -168,10 +174,6 @@ var crypto = require("crypto")
  *              
  */
 userRouter.post('/login', (req, res, next) => {
-
-
-
-
   passport.authenticate('local', function(err, user, info) {
     if (err) { return res.json({error:'error happened when logging in'}) }
 
@@ -189,6 +191,9 @@ userRouter.post('/login', (req, res, next) => {
  * /resendauthorization:
  *  put:
  *      description: Sends another authorization email for user.
+ *      tags:
+ *        - UserAuthentication
+ *        - Put
  *      requestBody:
  *          required: true
  *          content:
@@ -288,6 +293,9 @@ userRouter.post('/login', (req, res, next) => {
  * /authorize/{token}:
  *  get:
  *      description: Checks if the authorization reset token is valid
+ *      tags:
+ *        - UserAuthentication
+ *        - Get
  *      parameters:
  *          -   in: path
  *              name: token
@@ -347,6 +355,9 @@ userRouter.post('/login', (req, res, next) => {
  * /authorize/{token}:
  *  post:
  *      description: Authorizes a user to log in, using a token sent to the user's email.
+ *      tags:
+ *        - UserAuthentication
+ *        - Post
  *      parameters:
  *          -   in: path
  *              name: token
@@ -412,6 +423,9 @@ userRouter.post('/login', (req, res, next) => {
  * /protected:
  *  get:
  *      description: Tests to see if you are logged in      
+ *      tags:
+ *        - UserAuthentication
+ *        - Get
  *      responses:
  *          '200':
  *              description: you are logged in
@@ -429,6 +443,9 @@ userRouter.get('/protected', isLoggedIn,  catchAsync(async(req, res, next) => {
  * /logout:
  *  post:
  *      description: Logs the user out.     
+ *      tags:
+ *        - UserAuthentication
+ *        - Post
  *      responses:
  *          '200':
  *              description: you successfully logged out
