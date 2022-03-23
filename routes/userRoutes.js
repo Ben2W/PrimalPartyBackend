@@ -102,6 +102,7 @@ var crypto = require("crypto")
          * Set BYPASS_EMAIL_AUTH = true in your enviornment variable to bypass email authorization
          * 
          */
+
         if(process.env.BYPASS_EMAIL_AUTH == 'true') {
             await user.updateOne({emailAuthenticated: true});
             return res.status(200).json({status: 'Registered account and authorized email'})
@@ -134,7 +135,7 @@ var crypto = require("crypto")
     } catch (e) {
         return res.status(500).json({error: 'there has been an issue creating an account'})
     }
- }))
+}))
 
 
 /**
@@ -171,20 +172,23 @@ var crypto = require("crypto")
  *              description: success
  *          '500':
  *              description: there is an issue logging @TODO make more responses
- *              
+ *          '411':
+ *              description: This user could not be found OR Wrong Password OR Email needs to be authenticated
+ *          '412':
+ *              description: login Failed       
  */
-userRouter.post('/login', (req, res, next) => {
-  passport.authenticate('local', function(err, user, info) {
-    if (err) { return res.json({error:'error happened when logging in'}) }
-
-    // This error throws if email is not authorized OR the username is not valid
-    if (!user) { return res.json({error:'this user cannot be found'}) }
-    req.logIn(user, function(err) {
-      if (err) { return res.json({error:'login failed'}) }
-      return res.json({error:''})
-    });
-  })(req, res, next);
-});
+ userRouter.post('/login', (req, res, next) => {
+    passport.authenticate('local', function(err, user, info) {
+      if (err) { return res.json({error:'error happened when logging in'}) }
+  
+      // This error throws if email is not authorized OR the username is not valid
+      if (!user) { return res.status(411).json({error: 'This user could not be found OR Wrong Password OR Email needs to be authenticated'}) }
+      req.logIn(user, function(err) {
+        if (err) { return res.status(412).json({error: 'login Failed'}) }
+        return res.json({status:'successfully logged in'})
+      });
+    })(req, res, next);
+  });
 
 /**
  * @swagger
