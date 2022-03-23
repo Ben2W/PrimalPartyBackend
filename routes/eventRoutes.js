@@ -60,7 +60,7 @@ eventRouter.get('/events', isLoggedIn, catchAsync(async(req, res) => {
  *              
  */
 eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(async(req, res) => {
-	const { eventId } = req.params.eventId;
+	const { eventId } = req.params;
 	const currEvent = await Event.findById(eventId).populate('guests')
     console.log(currEvent)
 	res.json({guests: currEvent.guests});
@@ -94,7 +94,7 @@ eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(asy
  *              
  */
 eventRouter.get('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(req, res) => {
-	const { eventId } = req.params.eventId;
+	const { eventId } = req.params;
 	const currEvent = await Event.findById(eventId).populate('guests').populate('tasks').populate('admin')
 	res.json({ currEvent });
 }))
@@ -127,7 +127,7 @@ eventRouter.get('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(req,
  *              
  */
 eventRouter.get('/events/:eventId/tasks', isLoggedIn, isInvited, catchAsync(async(req, res) => {
-	const { eventId } = req.params.eventId;
+	const { eventId } = req.params;
 	const currEvent = await Event.findById(eventId)
 	.populate({ 
 		path: 'tasks',
@@ -361,9 +361,10 @@ eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchA
     if(event.guests.indexOf(guestId) != -1){ return res.status(410).json({error:'Guest already found in guest list'})}
 
     await Event.findByIdAndUpdate(event._id, { $addToSet: { guests: guest } }, {new: true, runValidators: true})
-    await User.findByIdAndUpdate(guest._id, { $addToSet: { events: event } }, {new: true, runValidators: true})
+    const newGuest = await User.findByIdAndUpdate(guest._id, { $addToSet: { events: event } }, {new: true, runValidators: true})
 
-    res.status(200).json({error:''});
+    event.save()
+    res.status(200).json({newGuest});
 }))
 
 //Delete a guest from an event
@@ -420,10 +421,12 @@ eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catc
         return res.status(500).json({error:"Cannot delete admin from the event"})
     }
 
-    await Event.findByIdAndUpdate(event._id, {$pull: {guests: guestId}}, {new: true, runValidators: true})
+    const updateEvent =  await Event.findByIdAndUpdate(event._id, {$pull: {guests: guestId}}, {new: true, runValidators: true})
     await User.findByIdAndUpdate(req.user._id, {$pull: {events: event._id}}, {new: true, runValidators: true})
     await Task.updateMany({}, {$pull: {assignees: req.user._id}}, {new: true, runValidators: true})
-    res.status(200).json({event});
+
+    const remainingGuests = updateEvent.guests
+    res.status(200).json({remainingGuests});
 }))
 
 
@@ -431,6 +434,8 @@ eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catc
 //Checks if the task is already in the event and adds it if not
 
 /**
+ * @TODO Issue, if the assignee doesnt correspond with a valid user the error is not handled
+ * 
  * @swagger
  * /events/{eventId}/tasks:
  *  post:
@@ -500,7 +505,7 @@ eventRouter.post('/events/:eventId/tasks', isLoggedIn, isAdmin, catchAsync(async
 
     await Event.findByIdAndUpdate(event._id, { $addToSet: { tasks: task } }, {new: true, runValidators: true})
 
-    res.status(200).json({error:''});
+    res.status(200).json({task});
 }))
 
 
@@ -551,9 +556,11 @@ eventRouter.delete('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchA
     const taskIndex = event.tasks.indexOf(taskId);
     if(taskIndex == -1) {return res.status(410).json({error:'task does not in list'})}
 
-    await Event.findByIdAndUpdate(event._id, {$pull: {tasks: taskId}}, {new: true, runValidators: true})
+    const updatedEvent = await Event.findByIdAndUpdate(event._id, {$pull: {tasks: taskId}}, {new: true, runValidators: true})
     await Task.findByIdAndDelete(taskId)
-    res.status(200).json({event});
+
+    const tasks = updatedEvent.tasks
+    res.status(200).json({tasks});
 }))
 
 module.exports = eventRouter;
