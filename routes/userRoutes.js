@@ -11,7 +11,8 @@ const sgMail = require('@sendgrid/mail')
 require('dotenv').config()
 const sgMAILAPI = process.env.SENDGRID_API_KEY
 sgMail.setApiKey(sgMAILAPI)
-var crypto = require("crypto")
+var crypto = require("crypto");
+const { MongoCursorInUseError } = require('mongodb');
 
 // @TODO Resend Token
 // @TODO delete user (if an attacker is using someone else' email AND the user has not been authorized yet.)
@@ -80,13 +81,15 @@ var crypto = require("crypto")
         
 
         //Make sure the email and username are unique.
-        const {username, email} = req.body
+        const {username, email, phone} = req.body
         const duplicateUsername = await User.exists({username: username});
         const duplicateEmail = await User.exists({email: email});
+        const duplicatePhone = await User.exists({phone:phone})
 
-        if (duplicateEmail && duplicateUsername) return res.status(410).json({error: 'username and email already taken'})
+        if (duplicateEmail && duplicateUsername && duplicatePhone) return res.status(410).json({error: 'username, phone, and email already taken'})
         if (duplicateEmail) return res.status(411).json({error: 'email already taken'})
         if (duplicateUsername) return res.status(412).json({error: 'username already taken'})
+        if (duplicatePhone) return res.status(412).json({error: 'phone already taken'})
  
 
 
@@ -465,5 +468,149 @@ userRouter.post('/logout', isLoggedIn, (req,res)=>{
         throw new AppError(e,500)
     }
 })
+
+//get your account info
+userRouter.get('/account', isLoggedIn, catchAsync(async(req, res)=>{
+    const user =  await User.findById(req.user._id).populate('events').populate('friends')
+    return res.status(200).json({user})
+}))
+
+//delete your account
+userRouter.delete('/account', isLoggedIn, catchAsync(async(req, res)=>{
+    try{
+        await User.findByIdAndDelete(req.user._id)
+        return res.status(200).json({error:''})
+    }catch(e){
+        return res.status(500).json({error:'user could not be deleted'})
+    }
+}))
+
+//VERIFICATION NEEDS TO BE IMPLEMENTED WHEN U CHANGE YOUR EMAIL
+//update your account
+userRouter.put('/account', isLoggedIn, catchAsync(async(req, res)=>{
+    try{
+        const user = await User.findById(req.user._id)
+        const {firstName=user.firstName, lastName=user.lastName, username=user.username, phone=user.phone, email=user.email} = req.body;
+        if(firstName == '' || lastName =='' || username == '' || phone == '' || email == ''){return res.status(500).json({error:'Fields required'})}
+        
+        const usersWithThatUsername = await User.find({username:username})
+        if(usersWithThatUsername.length > 0 && (usersWithThatUsername.length > 1 || usersWithThatUsername[0]._id.toString() != req.user._id)){
+            return res.status(500).json({error:'username is taken'})
+        }
+
+        const usersWithThatEmail = await User.find({email: email})
+        if(usersWithThatEmail.lengt > 0 && (usersWithThatEmail.length > 1 || usersWithThatEmail[0]._id.toString() != req.user._id)){
+            return res.status(500).json({error:'email is taken'})
+        }
+
+        const usersWithThatPhone= await User.find({phone:phone})
+        if(usersWithThatPhone.length > 1 || usersWithThatPhone[0]._id.toString() != req.user._id){
+            return res.status(500).json({error:'phone is taken'})
+        }
+        
+        await User.findByIdAndUpdate(req.user._id, {$set: {firstName : firstName, lastName:lastName, email:email, phone:phone, username:username}}, {new: true, runValidators: true});
+        
+        return res.status(200).json({error:''})
+    }catch(e){
+        console.log(e)
+        return res.status(500).json({error:'user could not be updated'})
+    }
+}))
+
+//get your friends list
+userRouter.get('/friends', isLoggedIn, catchAsync(async(req, res)=>{
+
+    try{
+        const user = await User.findById(req.user._id).populate('friends')
+        const friends = user.friends
+        return res.status(200).json({friends})
+    }catch(e){
+        return res.status(500).json({error:'could not find friends'})
+    }
+}))
+
+//view the details of a specific friend
+userRouter.get('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
+    try{
+        const user = await User.findById(req.user._id).populate('friends')
+        const {friendId} = req.params
+
+        if(friendId == req.user._id){
+            return res.status(500).json({error:'cannot view yourself in your friends list'})
+        }
+
+        for (let friend of user.friends){
+            if (friend._id.toString() == friendId){
+                return res.status(200).json({friend})
+            }
+        }
+        return res.status(500).json({error:'no such user in your friends list'})
+    }catch(e){
+        return res.status(500).json({error:'something went wrong while looking for friend'})
+    }
+}))
+
+
+userRouter.post('/friends/:friendId', catchAsync(async(req, res)=>{
+    const user = await User.findById(req.user._id).populate('friends')
+    const {friendId} = req.params
+
+    if(friendId == req.user._id){
+        return res.status(500).json({error:'cannot add yourself to your friends list'})
+    }
+
+    for (let friend of user.friends){
+        if(friend._id.toString() == friendId){
+            return res.status(500).json({error:'this user is already in your friends list'})
+        }
+    }
+
+    const friend = await User.findById(friendId)
+    await User.findByIdAndUpdate(user._id, { $addToSet: { friends: friend._id } }, {new: true, runValidators: true})
+    await User.findByIdAndUpdate(friend._id, { $addToSet: { friends: user._id } }, {new: true, runValidators: true})
+    return res.status(200).json({error:''})
+}))
+
+userRouter.delete('/friends/:friendId', catchAsync(async(req,res)=>{
+    const user = await User.findById(req.user._id).populate('friends')
+    const {friendId} = req.params
+
+    if(friendId == req.user._id){
+        return res.status(500).json({error:'cannot delete yourself from your friends list'})
+    }
+
+    for (let friend of user.friends){
+        if(friend._id.toString() == friendId){
+            await User.findByIdAndUpdate(req.user._id, {$pull: {friends: friendId}}, {new: true, runValidators: true}) 
+            await User.findByIdAndUpdate(friendId, {$pull: {friends: req.user._id}}, {new: true, runValidators: true}) 
+            return res.status(200).json({error:''})
+        }
+    }
+
+    return res.status(500).json({error:'this user is not in your friends list'})
+
+}))
+
+
+userRouter.get('/users', catchAsync(async(req, res)=>{
+    const {q} = req.query
+    await User.find({$and: [ {_id: {$ne:req.user._id}},
+                    {$or: 
+                        [{ "firstName": { "$regex": `${q}`, "$options": "i" }},
+                        { "lastName": { "$regex": `${q}`, "$options": "i" }},
+                        { "username": { "$regex": `${q}`, "$options": "i" }},
+                        { "email": { "$regex": `${q}`, "$options": "i" }},
+                        { "phone": { "$regex": `${q}`, "$options": "i" }}
+    ]}]}, (error, docs)=>{
+        if (error){
+            return res.status(500).json({error:'search failed'})
+        }else{
+            return res.status(200).json({users: docs, error:''})
+        }
+    }).clone()
+}))
+
+
+
 
 module.exports = userRouter;
