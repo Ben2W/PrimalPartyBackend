@@ -185,7 +185,7 @@ var crypto = require("crypto")
       if (!user) { return res.status(411).json({error: 'This user could not be found OR Wrong Password OR Email needs to be authenticated'}) }
       req.logIn(user, function(err) {
         if (err) { return res.status(412).json({error: 'login Failed'}) }
-        return res.json({status:'successfully logged in'})
+        return res.json({user})
       });
     })(req, res, next);
   });
