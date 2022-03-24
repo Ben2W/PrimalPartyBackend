@@ -21,8 +21,8 @@ const UserSchema = new Schema({
     phone:{
         type:String,
         required:true,
-        minlength:[12, "phone number has to be 12 characters long"], // +14077574245
-        maxlength:[12, "phone number has to be 12 characters long"]
+        minlength:[12, "phone number has to be at least 12 characters long"], // +14077574245
+        maxlength:[14, "phone number has to be at most 14 characters long"]
     },
     email:{
         type:String,
