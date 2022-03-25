@@ -436,6 +436,8 @@ const { MongoCursorInUseError } = require('mongodb');
  *      responses:
  *          '200':
  *              description: you are logged in
+ *          '401':
+ *              description: you are not authenticated
  *          '500':
  *              description: you do not have access to this page
  *              
@@ -456,6 +458,8 @@ userRouter.get('/protected', isLoggedIn,  catchAsync(async(req, res, next) => {
  *      responses:
  *          '200':
  *              description: you successfully logged out
+ *          '401':
+ *              description: you are not authenticated
  *          '500':
  *              description: you are not authenticated
  *              
@@ -517,7 +521,23 @@ userRouter.put('/account', isLoggedIn, catchAsync(async(req, res)=>{
     }
 }))
 
-//get your friends list
+
+/**
+ * @swagger
+ * /friends:
+ *  get:
+ *      description: Gets the user's friends list 
+ *      tags:
+ *        - Friends 
+ *        - Get
+ *      responses:
+ *          '200':
+ *              description: FriendList
+ *          '401':
+ *              description: you are not authenticated
+ *          '500':
+ *              description: unexepected error
+ */
 userRouter.get('/friends', isLoggedIn, catchAsync(async(req, res)=>{
 
     try{
@@ -529,14 +549,42 @@ userRouter.get('/friends', isLoggedIn, catchAsync(async(req, res)=>{
     }
 }))
 
-//view the details of a specific friend
+/**
+ * @swagger
+ * /friends/{friendId}:
+ *  get:
+ *      description: view the details of a specific friend
+ *      tags:
+ *        - Friends 
+ *        - Get
+ *      parameters:
+ *          -   in: path
+ *              name: friendId
+ *              schema:
+ *                  type: string
+ *                  example: 623018e31d596470d49769e0
+ *              required: true
+ *              description: "The ID of the userId whom is on our friends list and we are trying to "
+ *              
+ *      responses:
+ *          '200':
+ *              description: event information.
+ *          '500':
+ *              description: something went wrong while looking for friend
+ *          '401':
+ *              description: you are not authenticated
+ *          '404':
+ *              description: no such user in your friends list
+ *          '405':
+ *              description: cannot add yourself to your friends list
+ */
 userRouter.get('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
     try{
         const user = await User.findById(req.user._id).populate('friends')
         const {friendId} = req.params
 
         if(friendId == req.user._id){
-            return res.status(500).json({error:'cannot view yourself in your friends list'})
+            return res.status(405).json({error:'cannot view yourself in your friends list'})
         }
 
         for (let friend of user.friends){
@@ -544,7 +592,7 @@ userRouter.get('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
                 return res.status(200).json({friend})
             }
         }
-        return res.status(500).json({error:'no such user in your friends list'})
+        return res.status(404).json({error:'no such user in your friends list'})
     }catch(e){
         return res.status(500).json({error:'something went wrong while looking for friend'})
     }
@@ -552,18 +600,50 @@ userRouter.get('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
 
 
 
-//add a new friend
+/**
+ * 
+ * @swagger
+ * /friends/{friendId}:
+ *  post:
+ *      description: add a new friend
+ *      tags:
+ *        - Friends
+ *        - Post
+ *      parameters:
+ *          -   in: path
+ *              name: friendId
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "The userID of the friend you want to add, will look like:  http://primalparty.com/friend/[friendID]"
+ * 
+ *         
+ *      responses:
+ *          '200':
+ *              description: new event
+ *          '500':
+ *              description: There is an unexepected issue creating this event
+ *          '401':
+ *              description: you are not authenticated
+ *          '405':
+ *              description: cannot add yourself to your friends list
+ *          '409':
+ *              description: this user is already in your friends list
+ * 
+ * 
+ */
 userRouter.post('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
     const user = await User.findById(req.user._id).populate('friends')
     const {friendId} = req.params
 
     if(friendId == req.user._id){
-        return res.status(500).json({error:'cannot add yourself to your friends list'})
+        return res.status(405).json({error:'cannot add yourself to your friends list'})
     }
 
     for (let friend of user.friends){
         if(friend._id.toString() == friendId){
-            return res.status(500).json({error:'this user is already in your friends list'})
+            return res.status(409).json({error:'this user is already in your friends list'})
         }
     }
 
@@ -573,13 +653,46 @@ userRouter.post('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
     return res.status(200).json({error:''})
 }))
 
-//delete user from your friend's list
+/**
+ * 
+ * @swagger
+ * /friends/{friendId}:
+ *  delete:
+ *      description: delete user from your friend's list
+ *      tags:
+ *        - Friends
+ *        - Delete
+ *      parameters:
+ *          -   in: path
+ *              name: friendId
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "The userID of the friend you want to delete, will look like:  http://primalparty.com/friend/[friendID]"
+ * 
+ *         
+ *      responses:
+ *          '200':
+ *              description: new event
+ *          '500':
+ *              description: There is an unexepected issue creating this event
+ *          '401':
+ *              description: you are not authenticated
+ *          '403':
+ *              description: not authorized
+ *          '400':
+ *              description: cannot delete yourself from your friends list @TODO should be 403
+ *          '404':
+ *              description: this user is not in your friends list
+ *              
+ */
 userRouter.delete('/friends/:friendId', isLoggedIn, catchAsync(async(req,res)=>{
     const user = await User.findById(req.user._id).populate('friends')
     const {friendId} = req.params
 
     if(friendId == req.user._id){
-        return res.status(500).json({error:'cannot delete yourself from your friends list'})
+        return res.status(400).json({error:'cannot delete yourself from your friends list'})
     }
 
     for (let friend of user.friends){
@@ -590,7 +703,7 @@ userRouter.delete('/friends/:friendId', isLoggedIn, catchAsync(async(req,res)=>{
         }
     }
 
-    return res.status(500).json({error:'this user is not in your friends list'})
+    return res.status(404).json({error:'this user is not in your friends list'})
 
 }))
 
