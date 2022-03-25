@@ -50,7 +50,7 @@ const { userSchema, eventSchema, taskSchema } = require('./schemas.js');
 const {isLoggedIn, isAdmin} = require('./middleware') 
 const app = express()
 app.use(cors({
-    origin: ['http://localhost:3000', 'https://black-ocean-0eed1b40f.1.azurestaticapps.net'],
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://black-ocean-0eed1b40f.1.azurestaticapps.net'],
     credentials: true, //access-control-allow-credentials:true
     optionSuccessStatus:200,
 }))
