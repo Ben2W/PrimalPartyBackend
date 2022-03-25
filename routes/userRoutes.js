@@ -550,8 +550,10 @@ userRouter.get('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
     }
 }))
 
+
+
 //add a new friend
-userRouter.post('/friends/:friendId', catchAsync(async(req, res)=>{
+userRouter.post('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
     const user = await User.findById(req.user._id).populate('friends')
     const {friendId} = req.params
 
@@ -572,7 +574,7 @@ userRouter.post('/friends/:friendId', catchAsync(async(req, res)=>{
 }))
 
 //delete user from your friend's list
-userRouter.delete('/friends/:friendId', catchAsync(async(req,res)=>{
+userRouter.delete('/friends/:friendId', isLoggedIn, catchAsync(async(req,res)=>{
     const user = await User.findById(req.user._id).populate('friends')
     const {friendId} = req.params
 
@@ -593,7 +595,7 @@ userRouter.delete('/friends/:friendId', catchAsync(async(req,res)=>{
 }))
 
 //search users
-userRouter.get('/users', catchAsync(async(req, res)=>{
+userRouter.get('/users',  isLoggedIn, catchAsync(async(req, res)=>{
     const {q} = req.query
     await User.find({$and: [ {_id: {$ne:req.user._id}},
                     {$or: 
