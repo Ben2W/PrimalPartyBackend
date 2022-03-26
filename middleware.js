@@ -29,7 +29,7 @@ module.exports.isInvited = catchAsync(async (req, res, next) => {
         }
     }
 
-    return res.status(403).json({error:"party was not found (you were not invited)"})
+    return res.status(404).json({error:"event was not found (you were not invited)"})
 })
 
 module.exports.isAdmin = catchAsync(async (req, res, next) => {

@@ -716,7 +716,7 @@ userRouter.get('/users',  isLoggedIn, catchAsync(async(req, res)=>{
                         { "lastName": { "$regex": `${q}`, "$options": "i" }},
                         { "username": { "$regex": `${q}`, "$options": "i" }},
                         { "email": { "$regex": `${q}`, "$options": "i" }},
-                        { "phone": { "$regex": `${q}`, "$options": "i" }}
+                        { "phone": { "$regex": `${q}`, "$options": "i" }}           /**@TODO Remove this because phone numbers shouldn't be public.*/
     ]}]}, (error, docs)=>{
         if (error){
             return res.status(500).json({error:'search failed'})
@@ -726,7 +726,9 @@ userRouter.get('/users',  isLoggedIn, catchAsync(async(req, res)=>{
     }).clone()
 }))
 
-
+/**
+ * @TODO : Add reset passowrd (while logged in )
+ */
 
 
 module.exports = userRouter;
