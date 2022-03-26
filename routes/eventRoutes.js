@@ -32,7 +32,6 @@ eventRouter.get('/events', isLoggedIn, catchAsync(async(req, res) => {
 	res.json({ events })
 }))
 
-
 // View the guests of a specific event
 /**
  * @swagger
@@ -470,10 +469,7 @@ eventRouter.delete('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(r
 }))
 
 
-
-
 //Checks if the guest is already in the event and adds them if not
-
 /**
  * @swagger
  * /events/{eventId}/guests/{guestId}:
@@ -530,9 +526,7 @@ eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchA
     res.status(200).json({newGuest});
 }))
 
-//Delete a guest from an event
-//Checks if the guest is in the list and deletes it based on index if so
-
+//Deletes a guest if the guest is in the event
 /**
  * @swagger
  * /events/{eventId}/guests/{guestId}:
@@ -592,17 +586,14 @@ eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catc
     res.status(200).json({remainingGuests});
 }))
 
-
-//Add a task to an event
-//Checks if the task is already in the event and adds it if not
-
+//Adds a task to the event
 /**
  * @TODO Issue, if the assignee doesnt correspond with a valid user the error is not handled
  * 
  * @swagger
  * /events/{eventId}/tasks:
  *  post:
- *      description: Adds a task in the event if there isn't a task.
+ *      description: Adds a task to the event
  *      tags:
  *        - Events
  *        - Post
@@ -673,9 +664,7 @@ eventRouter.post('/events/:eventId/tasks', isLoggedIn, isAdmin, catchAsync(async
     res.status(200).json({task});
 }))
 
-
-//Delete a task from an event
-//Checks if the task is in the list and deletes it based on index if so
+//Delete a task from an event if the tesk is in the event
 /**
  * @swagger
  * /events/{eventId}/tasks/{taskId}:
