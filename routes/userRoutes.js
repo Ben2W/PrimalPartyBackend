@@ -17,6 +17,7 @@ const { MongoCursorInUseError } = require('mongodb');
 // @TODO Resend Token
 // @TODO delete user (if an attacker is using someone else' email AND the user has not been authorized yet.)
 
+//Registers a user.
 /**
  * @TODO Make the token, a JWT 
  * 
@@ -66,7 +67,7 @@ const { MongoCursorInUseError } = require('mongodb');
  *              description: email sent
  *          '500':
  *              description: there is an issue creating the account (this needs to be better)
- *          '501':
+ *          '503':
  *              description: email unable to be sent
  *          '410':
  *              description: username and email already taken
@@ -140,7 +141,7 @@ const { MongoCursorInUseError } = require('mongodb');
     }
 }))
 
-
+//Logs in a user
 /**
  * @TODO Add another route to send another authorization token when you fail a login because the email isn't authorized
  * @TODO Check if the login information is correct, but if the email is not authorized (This might be really difficult to implement)
@@ -172,27 +173,26 @@ const { MongoCursorInUseError } = require('mongodb');
  *         
  *      responses:
  *          '200':
- *              description: success
+ *              description: success; returns user details
  *          '500':
  *              description: there is an issue logging @TODO make more responses
- *          '411':
- *              description: This user could not be found OR Wrong Password OR Email needs to be authenticated
- *          '412':
- *              description: login Failed       
+ *          '400':
+ *              description: This user could not be found OR Wrong Password OR Email needs to be authenticated    
  */
  userRouter.post('/login', (req, res, next) => {
     passport.authenticate('local', function(err, user, info) {
-      if (err) { return res.json({error:'error happened when logging in'}) }
+      if (err) { return res.status(500).json({error: 'there is an issue logging in'}) }
   
       // This error throws if email is not authorized OR the username is not valid
-      if (!user) { return res.status(411).json({error: 'This user could not be found OR Wrong Password OR Email needs to be authenticated'}) }
+      if (!user) { return res.status(400).json({error: 'This user could not be found OR Wrong Password OR Email needs to be authenticated'}) }
       req.logIn(user, function(err) {
-        if (err) { return res.status(412).json({error: 'login Failed'}) }
+        if (err) { return res.status(500).json({error: 'there is an issue logging in'}) }
         return res.json({user})
       });
     })(req, res, next);
   });
 
+//Sends another authorization email for user.
 /**
  * @swagger
  * /resendauthorization:
@@ -218,13 +218,15 @@ const { MongoCursorInUseError } = require('mongodb');
  *              description: success
  *          '500':
  *              description: unexepected error
- *          '400':
+ *          '503':
+ *              description: email service unnavailable
+ *          '410':
  *              description: this email is already authenticated
- *          '401':
+ *          '404':
  *              description: user not found
- *          '402':
+ *          '409':
  *              description: please wait at least 15 seconds between sending emails
- *          '403':
+ *          '412':
  *              description: email invalid
  *              
  */
@@ -233,7 +235,7 @@ const { MongoCursorInUseError } = require('mongodb');
     email = req.body.email;
     // @TODO: add more ways an email can be invalid
     if (email == undefined){
-        return res.status(403).json({error: 'email invalid'});
+        return res.status(412).json({error: 'email invalid'});
     }
 
 
@@ -242,11 +244,11 @@ const { MongoCursorInUseError } = require('mongodb');
 
     const user = await User.findOne({email: email});
     if(!user){
-        return res.status(401).json({error: 'user not found'});
+        return res.status(404).json({error: 'user not found'});
     }
 
     if(user.emailAuthenticated){
-        return res.status(400).json({error: 'this email is already authenticated'});
+        return res.status(410).json({error: 'this email is already authenticated'});
     }
 
 
@@ -268,7 +270,7 @@ const { MongoCursorInUseError } = require('mongodb');
     */
 
     if(Date.now() - user.emailAuthTokenCreation < spamCooldown){
-        return res.status(402).json({error: 'please wait at least 15 seconds between sending emails'})
+        return res.status(409).json({error: 'please wait at least 15 seconds between sending emails'})
     }
     token = crypto.randomBytes(20).toString('hex');
     await user.updateOne({emailAuthToken: token, emailAuthTokenCreation: Date.now()});
@@ -292,7 +294,7 @@ const { MongoCursorInUseError } = require('mongodb');
     //@TODO: Properly handle these errors.
     sgMail.send(message)
         .then(response => res.json({status: 'email sent'}))
-    .catch(err => res.status(500).json({error: 'email cannot be sent'}));
+    .catch(err => res.status(503).json({error: 'email cannot be sent'}));
 })); 
 
 /**
@@ -317,9 +319,9 @@ const { MongoCursorInUseError } = require('mongodb');
  *              description: token valid
  *          '500':
  *              description: unexepected error
- *          '400':
+ *          '404':
  *              description: not a valid token
- *          '401':
+ *          '410':
  *              description: this token is expired
  */
  userRouter.get('/authorize/:token', catchAsync(async(req, res, next) => {
@@ -329,7 +331,7 @@ const { MongoCursorInUseError } = require('mongodb');
     const user = await User.findOne({emailAuthToken: req.params.token});
 
     if(!user){
-        return res.status(400).json({error: 'this token is invalid'});
+        return res.status(404).json({error: 'this token is invalid'});
     }
 
 
@@ -350,7 +352,7 @@ const { MongoCursorInUseError } = require('mongodb');
     */
 
     if(expireTime + user.emailAuthTokenCreation.getTime()  < Date.now()){
-        res.status(401).json({error: 'token expired'});
+        res.status(410).json({error: 'token expired'});
     }
 
     res.json({status: 'this token is valid'})
@@ -376,12 +378,12 @@ const { MongoCursorInUseError } = require('mongodb');
  *          
  *      responses:
  *          '200':
- *              description: success
+ *              description: user authenticated and logged in
  *          '500':
  *              description: unexepected error
  *          '400':
  *              description: user does not exist
- *          '401':
+ *          '410':
  *              description: token has expired
  *              
  */
@@ -409,7 +411,7 @@ const { MongoCursorInUseError } = require('mongodb');
     *
     */
     if(expireTime + user.emailAuthTokenCreation.getTime()  < Date.now()){
-        res.status(401).json({error: 'token expired'});
+        res.status(410).json({error: 'token expired'});
     }
 
     await user.updateOne({emailAuthenticated: true});
@@ -436,6 +438,8 @@ const { MongoCursorInUseError } = require('mongodb');
  *      responses:
  *          '200':
  *              description: you are logged in
+ *          '401':
+ *              description: you are not authenticated
  *          '500':
  *              description: you do not have access to this page
  *              
@@ -456,8 +460,10 @@ userRouter.get('/protected', isLoggedIn,  catchAsync(async(req, res, next) => {
  *      responses:
  *          '200':
  *              description: you successfully logged out
- *          '500':
+ *          '401':
  *              description: you are not authenticated
+ *          '500':
+ *              description: an unexpected error has occured
  *              
  */
 userRouter.post('/logout', isLoggedIn, (req,res)=>{
@@ -470,10 +476,31 @@ userRouter.post('/logout', isLoggedIn, (req,res)=>{
 })
 
 //get your account info
+/**
+ * @swagger
+ * /account:
+ *  get:
+ *      description: get your account info
+ *      tags:
+ *        - UserAuthentication
+ *        - Get
+ *      responses:
+ *          '200':
+ *              description: User info
+ *          '401':
+ *              description: you are not authenticated
+ *          '500':
+ *              description: an unexpected error occured
+ *              
+ */
 userRouter.get('/account', isLoggedIn, catchAsync(async(req, res)=>{
     const user =  await User.findById(req.user._id).populate('events').populate('friends')
     return res.status(200).json({user})
 }))
+
+/**
+ * @TODO Fix these before allows frontend to access them
+ */
 
 //delete your account
 userRouter.delete('/account', isLoggedIn, catchAsync(async(req, res)=>{
@@ -517,7 +544,23 @@ userRouter.put('/account', isLoggedIn, catchAsync(async(req, res)=>{
     }
 }))
 
-//get your friends list
+//Gets the user's friends list 
+/**
+ * @swagger
+ * /friends:
+ *  get:
+ *      description: Gets the user's friends list 
+ *      tags:
+ *        - Friends 
+ *        - Get
+ *      responses:
+ *          '200':
+ *              description: FriendList
+ *          '401':
+ *              description: you are not authenticated
+ *          '500':
+ *              description: unexepected error
+ */
 userRouter.get('/friends', isLoggedIn, catchAsync(async(req, res)=>{
 
     try{
@@ -530,13 +573,42 @@ userRouter.get('/friends', isLoggedIn, catchAsync(async(req, res)=>{
 }))
 
 //view the details of a specific friend
+/**
+ * @swagger
+ * /friends/{friendId}:
+ *  get:
+ *      description: view the details of a specific friend
+ *      tags:
+ *        - Friends 
+ *        - Get
+ *      parameters:
+ *          -   in: path
+ *              name: friendId
+ *              schema:
+ *                  type: string
+ *                  example: 623018e31d596470d49769e0
+ *              required: true
+ *              description: "The ID of the userId whom is on our friends list and we are trying to "
+ *              
+ *      responses:
+ *          '200':
+ *              description: event information.
+ *          '500':
+ *              description: something went wrong while looking for friend
+ *          '401':
+ *              description: you are not authenticated
+ *          '404':
+ *              description: no such user in your friends list
+ *          '403':
+ *              description: cannot add yourself to your friends list
+ */
 userRouter.get('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
     try{
         const user = await User.findById(req.user._id).populate('friends')
         const {friendId} = req.params
 
         if(friendId == req.user._id){
-            return res.status(500).json({error:'cannot view yourself in your friends list'})
+            return res.status(403).json({error:'cannot view yourself in your friends list'})
         }
 
         for (let friend of user.friends){
@@ -544,7 +616,7 @@ userRouter.get('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
                 return res.status(200).json({friend})
             }
         }
-        return res.status(500).json({error:'no such user in your friends list'})
+        return res.status(404).json({error:'no such user in your friends list'})
     }catch(e){
         return res.status(500).json({error:'something went wrong while looking for friend'})
     }
@@ -552,18 +624,50 @@ userRouter.get('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
 
 
 
-//add a new friend
+/**
+ * 
+ * @swagger
+ * /friends/{friendId}:
+ *  post:
+ *      description: add a new friend
+ *      tags:
+ *        - Friends
+ *        - Post
+ *      parameters:
+ *          -   in: path
+ *              name: friendId
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "The userID of the friend you want to add, will look like:  http://primalparty.com/friend/[friendID]"
+ * 
+ *         
+ *      responses:
+ *          '200':
+ *              description: new event
+ *          '500':
+ *              description: There is an unexepected issue creating this event
+ *          '401':
+ *              description: you are not authenticated
+ *          '405':
+ *              description: cannot add yourself to your friends list
+ *          '409':
+ *              description: this user is already in your friends list
+ * 
+ * 
+ */
 userRouter.post('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
     const user = await User.findById(req.user._id).populate('friends')
     const {friendId} = req.params
 
     if(friendId == req.user._id){
-        return res.status(500).json({error:'cannot add yourself to your friends list'})
+        return res.status(405).json({error:'cannot add yourself to your friends list'})
     }
 
     for (let friend of user.friends){
         if(friend._id.toString() == friendId){
-            return res.status(500).json({error:'this user is already in your friends list'})
+            return res.status(409).json({error:'this user is already in your friends list'})
         }
     }
 
@@ -573,13 +677,46 @@ userRouter.post('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
     return res.status(200).json({error:''})
 }))
 
-//delete user from your friend's list
+/**
+ * 
+ * @swagger
+ * /friends/{friendId}:
+ *  delete:
+ *      description: delete user from your friend's list
+ *      tags:
+ *        - Friends
+ *        - Delete
+ *      parameters:
+ *          -   in: path
+ *              name: friendId
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "The userID of the friend you want to delete, will look like:  http://primalparty.com/friend/[friendID]"
+ * 
+ *         
+ *      responses:
+ *          '200':
+ *              description: new event
+ *          '500':
+ *              description: There is an unexepected issue creating this event
+ *          '401':
+ *              description: you are not authenticated
+ *          '403':
+ *              description: you don't have permision to do this 
+ *          '400':
+ *              description: cannot delete yourself from your friends list @TODO should be 403
+ *          '404':
+ *              description: this user is not in your friends list
+ *              
+ */
 userRouter.delete('/friends/:friendId', isLoggedIn, catchAsync(async(req,res)=>{
     const user = await User.findById(req.user._id).populate('friends')
     const {friendId} = req.params
 
     if(friendId == req.user._id){
-        return res.status(500).json({error:'cannot delete yourself from your friends list'})
+        return res.status(400).json({error:'cannot delete yourself from your friends list'})
     }
 
     for (let friend of user.friends){
@@ -590,7 +727,7 @@ userRouter.delete('/friends/:friendId', isLoggedIn, catchAsync(async(req,res)=>{
         }
     }
 
-    return res.status(500).json({error:'this user is not in your friends list'})
+    return res.status(404).json({error:'this user is not in your friends list'})
 
 }))
 
@@ -603,7 +740,7 @@ userRouter.get('/users',  isLoggedIn, catchAsync(async(req, res)=>{
                         { "lastName": { "$regex": `${q}`, "$options": "i" }},
                         { "username": { "$regex": `${q}`, "$options": "i" }},
                         { "email": { "$regex": `${q}`, "$options": "i" }},
-                        { "phone": { "$regex": `${q}`, "$options": "i" }}
+                        { "phone": { "$regex": `${q}`, "$options": "i" }}           /**@TODO Remove this because phone numbers shouldn't be public.*/
     ]}]}, (error, docs)=>{
         if (error){
             return res.status(500).json({error:'search failed'})
@@ -613,7 +750,9 @@ userRouter.get('/users',  isLoggedIn, catchAsync(async(req, res)=>{
     }).clone()
 }))
 
-
+/**
+ * @TODO : Add reset passowrd (while logged in )
+ */
 
 
 module.exports = userRouter;

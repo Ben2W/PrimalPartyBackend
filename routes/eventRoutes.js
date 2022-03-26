@@ -21,6 +21,8 @@ const {isLoggedIn, isAdmin, isInvited} = require('../middleware');
  *      responses:
  *          '200':
  *              description: {{eventList}}
+ *          '401':
+ *              description: you are not authenticated
  *          '500':
  *              description: unexepected error
  */
@@ -29,7 +31,6 @@ eventRouter.get('/events', isLoggedIn, catchAsync(async(req, res) => {
 	const events = await Event.find({$or: [{guests:id}, {admin:id}]})
 	res.json({ events })
 }))
-
 
 // View the guests of a specific event
 /**
@@ -54,8 +55,10 @@ eventRouter.get('/events', isLoggedIn, catchAsync(async(req, res) => {
  *              description: list of guests.
  *          '500':
  *              description: unexepected error
- *          '403':
- *              description: party was not found (you were not invited)"
+ *          '401':
+ *              description: you are not authenticated, isLoggedIn.js
+ *          '404':
+ *              description: party was not found (you were not invited)
  *              
  */
 eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(async(req, res) => {
@@ -87,7 +90,9 @@ eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(asy
  *              description: event information.
  *          '500':
  *              description: unexepected error
- *          '403':
+ *          '401':
+ *              description: you are not authenticated
+ *          '404':
  *              description: party was not found (you were not invited)"
  *              
  */
@@ -120,7 +125,9 @@ eventRouter.get('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(req,
  *              description: list of tasks.
  *          '500':
  *              description: unexepected error
- *          '403':
+ *          '401':
+ *              description: you are not authenticated
+ *          '404':
  *              description: party was not found (you were not invited)"
  *              
  */
@@ -168,31 +175,19 @@ eventRouter.get('/events/:eventId/tasks', isLoggedIn, isInvited, catchAsync(asyn
  *              description: task information.
  *          '500':
  *              description: unexepected error
- *          '403':
- *              description: party was not found (you were not invited)"
+ *          '401':
+ *              description: you are not authenticated
  *          '404':
- *              description: task does not exist
+ *              description: event not found or task does not exist"
  *              
- */
-
-/**
- * 
- * @todo we added IsInvited middleware, test this endpoint
- * 
- * 
  */
 eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, isInvited, catchAsync(async(req, res) => {
 	const { taskId } = req.params;
 	const currTask = await Task.findById(taskId).populate('assignees')
-    if(!currTask) return res.status(411).json({error:'Task does not exist'})
+    if(!currTask) return res.status(404).json({error:'Task does not exist'})
 
 	res.json({ currTask });
 }))
-
-/*
-*	Nick's Routes
-*/
-
 
 
 /**
@@ -240,8 +235,8 @@ eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, isInvited, catchAs
  *              description: new event
  *          '500':
  *              description: There is an unexepected issue creating this event
- *          '403':
- *              description: not authorized
+ *          '401':
+ *              description: you are not authenticated
  *              
  */
 eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
@@ -255,24 +250,147 @@ eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
 }))
 
 //Update event information
-//Check if the user is an admin and edit the event information if so
+/**
+ * @swagger
+ * /events/{eventId}:
+ *  put:
+ *      description: Check if the user is an admin and edit the event information if so
+ *      tags:
+ *        - Events 
+ *        - Put
+ *      parameters:
+ *          -   in: path
+ *              name: eventId
+ *              schema:
+ *                  type: string
+ *                  example: 623018e31d596470d49769e0
+ *              required: true
+ *              description: "The ID of the event, from which we are going to edit"
+ * 
+ *      requestBody:
+ *          required: true
+ *          content:
+ *              application/x-www-form-urlencoded:
+ *                  schema:
+ *                      type: object
+ *                      properties:
+ *                          name:
+ *                              type: string
+ *                              description: The name of the event
+ *                              example: movienight
+ *                          description:
+ *                              type: string
+ *                              description: the  description of the event
+ *                              example: movie night with the boys
+ *                          tags:
+ *                              type: array
+ *                              items:
+ *                                  type: string
+ *                                  example: movie
+ *                              description: tags for the event
+ *                          address:
+ *                              type: string
+ *                              description: the event address
+ *                              example: 1333 something lane                       
+ *                          date:
+ *                              type: string
+ *                              description: the date, TODO, Make this datatime instead of a string
+ *                              example: Monday 
+ *              
+ *      responses:
+ *          '200':
+ *              description: the  updated event info.
+ *          '500':
+ *              description: unexepected error
+ *          '401':
+ *              description: you are not authenticated
+ *          '404':
+ *              description: event was not found
+ *          '400':
+ *              description: Fields cannot be empty
+ *              
+ */
 eventRouter.put('/events/:eventId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
 
     const {eventId} = req.params;
 
     const event = await Event.findById(eventId);
-    if(!event){return res.status(500).json({error:'Event does not exist'})}
+    if(!event){return res.status(404).json({error:'Event does not exist'})}
     const {name=event.name, description=event.description, tags=event.tags, address=event.address, date=event.date} = req.body;
 
     if(name == '' || date == '' || address == ''){return res.status(500).json({error:'Fields required'})}
-    await Event.findByIdAndUpdate(eventId, {$set: {name : name, description : description, tags : tags, address : address, date : date}}, {new: true, runValidators: true});
+    const updatedEvent = await Event.findByIdAndUpdate(eventId, {$set: {name : name, description : description, tags : tags, address : address, date : date}}, {new: true, runValidators: true});
     
-    res.status(200).json({'error':''});
+    res.status(200).json({updatedEvent});
 }))
 
 
-//Update the task of an event
 //Check if event exists, if task exists, if task is part of event, if json has all required fields. Update task information if so.
+/**
+ * @swagger
+ * /events/{eventId}/tasks/{taskId}:
+ *  put:
+ *      description: if event exists, if task exists, if task is part of event, if json has all required fields. Update task information if so.
+ *      tags:
+ *        - Events
+ *        - Put
+ *      parameters:
+ *          -   in: path
+ *              name: eventId
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "the ID of the event which you are deleting the guest from."
+ *          -   in: path
+ *              name: taskId
+ *              schema:
+ *                  type: string
+ *                  example: 17de19ce2d431d191350cb31912dbf2796f84bb1
+ *              required: true
+ *              description: "the ID of the task which you are deleting from the event."
+ * 
+ *      requestBody:
+ *          required: true
+ *          content:
+ *              application/x-www-form-urlencoded:
+ *                  schema:
+ *                      type: object
+ *                      properties:
+ *                          name:
+ *                              type: string
+ *                              description: name of the task
+ *                              example: Bring Soda
+ *                          description:
+ *                              type: string
+ *                              description: description of the task
+ *                              example: Bring Pepsi, Coke, and Fanta
+ *                          assignees:
+ *                              type: array
+ *                              items:
+ *                                  type: string
+ *                                  example: asdas7d6a879yhi
+ *                              description: guests to assign 
+ *                          done:
+ *                              type: boolean
+ *                              description: whether or not this task has been completed
+ *                              example: true
+ * 
+ *      responses:
+ *          '200':
+ *              description: successfully deleted the task
+ *          '500':
+ *              description: unexepected error
+ *          '401':
+ *              description: you are not authenticated, isLoggedIn.js
+ *          '403':
+ *              description: you are do not have permission to do that
+ *          '404':
+ *              description: event does not exist
+ *          '410':
+ *              description: task not in list
+ *              
+ */
 eventRouter.put('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
 
     const {eventId, taskId} = req.params;
@@ -317,8 +435,11 @@ eventRouter.put('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsyn
  *              description: successfully deleted event
  *          '500':
  *              description: unexepected error
- *          '403':
- *              description: you are not authenticated to do that
+ *          '401':
+ *              description: you are not authenticated, isLoggedIn.js
+ *          '404':
+ *              description: event does not exist
+ * 
  *              
  */
 eventRouter.delete('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(req, res)=>{
@@ -341,17 +462,14 @@ eventRouter.delete('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(r
     }
     catch(err)
     {
-        return res.json({error:'Event does not exist'})
+        return res.status(500).json({status:'an unexpected error occured'});
     }
     
     res.status(200).json({status:'successfully deleted event'});
 }))
 
 
-
-
 //Checks if the guest is already in the event and adds them if not
-
 /**
  * @swagger
  * /events/{eventId}/guests/{guestId}:
@@ -380,8 +498,12 @@ eventRouter.delete('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(r
  *              description: successfully added guest
  *          '500':
  *              description: unexepected error
+ *          '401':
+ *              description: you are not authenticated
  *          '403':
- *              description: you are not authenticated to do that
+ *              description: you have to be an admin to do that
+ *          '404':
+ *              description: event not found
  *          '410':
  *              description: guest already found in list
  *          '411':
@@ -404,9 +526,7 @@ eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchA
     res.status(200).json({newGuest});
 }))
 
-//Delete a guest from an event
-//Checks if the guest is in the list and deletes it based on index if so
-
+//Deletes a guest if the guest is in the event
 /**
  * @swagger
  * /events/{eventId}/guests/{guestId}:
@@ -436,11 +556,11 @@ eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchA
  *          '500':
  *              description: unexepected error
  *          '403':
- *              description: you are not authenticated to do that
+ *              description: you do not have permission to do that
  *          '404':
- *              description: Event does not exist
+ *              description: Event not found, isAdmin.js
  *          '410':
- *              description: guest not in list
+ *              description: Gues not found in guest list
  *          '411':
  *              description: event does not exist
  *              
@@ -450,12 +570,12 @@ eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catc
     const {eventId, guestId} = req.params;
     const event = await Event.findById(eventId);
 
-    if(!event){return res.status(404).json({error:'Event does not exist'})}
+    if(!event){return res.status(410).json({error:'Event does not exist'})}
     const guestIndex = event.guests.indexOf(guestId);
-    if(guestIndex == -1){ return res.status(500).json({error:'Guest not found in guests list'})}
+    if(guestIndex == -1){ return res.status(410).json({error:'Guest not found in guests list'})}
 
     if(event.admin._id.toString() == guestId){
-        return res.status(500).json({error:"Cannot delete admin from the event"})
+        return res.status(403).json({error:"Cannot delete admin from the event"})
     }
 
     const updateEvent =  await Event.findByIdAndUpdate(event._id, {$pull: {guests: guestId}}, {new: true, runValidators: true})
@@ -466,17 +586,14 @@ eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catc
     res.status(200).json({remainingGuests});
 }))
 
-
-//Add a task to an event
-//Checks if the task is already in the event and adds it if not
-
+//Adds a task to the event
 /**
  * @TODO Issue, if the assignee doesnt correspond with a valid user the error is not handled
  * 
  * @swagger
  * /events/{eventId}/tasks:
  *  post:
- *      description: Adds a task in the event if there isn't a task.
+ *      description: Adds a task to the event
  *      tags:
  *        - Events
  *        - Post
@@ -518,12 +635,14 @@ eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catc
  *              description: successfully added guest
  *          '500':
  *              description: unexepected error
+ *          '401':
+ *              description: you are not authenticated, isLoggedIn.js
  *          '403':
- *              description: you are not authenticated to do that
+ *              description: you do not have permission to do that
  *          '404':
- *              description: Event does not exist
- *          '405':
- *              description: Name cannot be blank
+ *              description: Event not found, isAdmin.js
+ *          '400':
+ *              description: Bad request. Name cannot be blank
  *              
  */
 eventRouter.post('/events/:eventId/tasks', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
@@ -531,7 +650,7 @@ eventRouter.post('/events/:eventId/tasks', isLoggedIn, isAdmin, catchAsync(async
     const {eventId} = req.params;
     const {name, description="", assignees = []} = req.body
     
-    if(name == '') return res.status(405).json({error:"name cannot be blank"})
+    if(name == '') return res.status(400).json({error:"name cannot be blank"})
 
     const task = new Task({name:name, description:description, assignees:assignees, done:false, event:eventId})
     
@@ -545,9 +664,7 @@ eventRouter.post('/events/:eventId/tasks', isLoggedIn, isAdmin, catchAsync(async
     res.status(200).json({task});
 }))
 
-
-//Delete a task from an event
-//Checks if the task is in the list and deletes it based on index if so
+//Delete a task from an event if the tesk is in the event
 /**
  * @swagger
  * /events/{eventId}/tasks/{taskId}:
@@ -576,10 +693,12 @@ eventRouter.post('/events/:eventId/tasks', isLoggedIn, isAdmin, catchAsync(async
  *              description: successfully deleted the task
  *          '500':
  *              description: unexepected error
+ *          '401':
+ *              description: you are not authenticated, isLoggedIn.js
  *          '403':
- *              description: you are not authenticated to do that
+ *              description: you do not have permission to do that
  *          '404':
- *              description: task does not exist
+ *              description: event does not exist
  *          '410':
  *              description: task not in list
  *              
@@ -589,7 +708,7 @@ eventRouter.delete('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchA
     const {eventId, taskId} = req.params;
     const event = await Event.findById(eventId);
 
-    if(!event){return res.status(404).json({error:'task does not exist'})}
+    if(!event){return res.status(404).json({error:'event does not exist'})}
     const taskIndex = event.tasks.indexOf(taskId);
     if(taskIndex == -1) {return res.status(410).json({error:'task does not in list'})}
 

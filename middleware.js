@@ -8,7 +8,7 @@ const mongoose = require('mongoose')
 
 module.exports.isLoggedIn = (req, res, next) => {
     if (!req.isAuthenticated()) {
-        return res.status(403).json({error:"you have to be authenticated to do that"})
+        return res.status(401).json({error:"you are not authenticated"})
     }else{
         next();
     }
@@ -29,7 +29,7 @@ module.exports.isInvited = catchAsync(async (req, res, next) => {
         }
     }
 
-    return res.status(403).json({error:"party was not found (you were not invited)"})
+    return res.status(404).json({error:"event was not found (you were not invited)"})
 })
 
 module.exports.isAdmin = catchAsync(async (req, res, next) => {
