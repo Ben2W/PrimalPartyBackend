@@ -218,6 +218,8 @@ const { MongoCursorInUseError } = require('mongodb');
  *              description: success
  *          '500':
  *              description: unexepected error
+ *          '503':
+ *              description: email service unnavailable
  *          '410':
  *              description: this email is already authenticated
  *          '404':
@@ -226,8 +228,6 @@ const { MongoCursorInUseError } = require('mongodb');
  *              description: please wait at least 15 seconds between sending emails
  *          '412':
  *              description: email invalid
- *          '503':
- *              description: email cannot be sent
  *              
  */
  userRouter.put('/resendauthorization', catchAsync(async(req, res, next) => {

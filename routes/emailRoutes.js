@@ -43,20 +43,22 @@ var crypto = require("crypto")
  *              description: success
  *          '500':
  *              description: unexepected error
- *          '400':
- *              description: you are already logged in
- *          '401':
- *              description: user not found
- *          '402':
- *              description: please wait at least 15 seconds between reseting passwords
+ *          '503':
+ *              description: email service unnavailable
  *          '403':
- *              description: email invalid
+ *              description: you don't have permission to reset your password while already logged in
+ *          '404':
+ *              description: user not found
+ *          '409':
+ *              description: please wait at least 15 seconds between reseting passwords
+ *          '412':
+ *              description: email syntax invalid invalid
  *              
  */
 emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
 
     if(req.isAuthenticated()){
-        return res.status(400).json({error: 'you are already logged in'});
+        return res.status(403).json({error: 'you are already logged in'});
     } 
 
    
@@ -64,7 +66,7 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     email = req.body.email;
     // @TODO: add more ways an email can be invalid
     if (email == undefined){
-        return res.status(403).json({error: 'email invalid'});
+        return res.status(412).json({error: 'email syntax invalid'});
     }
 
 
@@ -73,7 +75,7 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
 
     const user = await User.findOne({email: email});
     if(!user){
-        return res.status(401).json({error: 'user not found'});
+        return res.status(404).json({error: 'user not found'});
     }
 
 
@@ -96,7 +98,7 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     */
 
     if(Date.now() - user.resetTokenCreation < spamCooldown){
-        return res.status(402).json({error: 'please wait at least 15 seconds between reseting passwords'})
+        return res.status(409).json({error: 'please wait at least 15 seconds between reseting passwords'})
     }
     token = crypto.randomBytes(20).toString('hex');
     await user.updateOne({resetToken: token, resetTokenCreation: Date.now()});
@@ -120,7 +122,7 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     //@TODO: Properly handle these errors.
     sgMail.send(message)
         .then(response => res.json({status: 'email sent'}))
-    .catch(err => res.status(500).json({error: 'email cannot be sent'}));
+    .catch(err => res.status(503).json({error: 'email cannot be sent'}));
 })); 
 
 
@@ -147,10 +149,11 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
  *              description: token valid
  *          '500':
  *              description: unexepected error
- *          '400':
+ *          '404':
  *              description: not a valid token
- *          '401':
+ *          '410':
  *              description: this token is expired
+ * 
  */
 emailRouter.get('/reset/:token', catchAsync(async(req, res, next) => {
 
@@ -159,7 +162,7 @@ emailRouter.get('/reset/:token', catchAsync(async(req, res, next) => {
     const user = await User.findOne({resetToken: req.params.token});
 
     if(!user){
-        return res.status(400).json({error: 'this user does not exist'});
+        return res.status(404).json({error: 'this user does not exist'});
     }
 
 
@@ -180,7 +183,7 @@ emailRouter.get('/reset/:token', catchAsync(async(req, res, next) => {
     */
 
     if(expireTime + user.resetTokenCreation.getTime()  < Date.now()){
-        res.status(401).json({error: 'token expired'});
+        res.status(410).json({error: 'token expired'});
     }
 
     res.json({status: 'this token is valid'})
@@ -223,9 +226,9 @@ emailRouter.get('/reset/:token', catchAsync(async(req, res, next) => {
  *              description: success
  *          '500':
  *              description: unexepected error
- *          '400':
+ *          '404':
  *              description: user does not exist
- *          '401':
+ *          '410':
  *              description: token has expired
  *              
  */
@@ -233,7 +236,7 @@ emailRouter.post('/reset/:token', catchAsync(async(req, res, next) => {
     const user = await User.findOne({resetToken: req.params.token});
 
     if(!user){
-        return res.status(400).json({error: 'this user does not exist'});
+        return res.status(404).json({error: 'this user does not exist'});
     }
 
 
@@ -253,7 +256,7 @@ emailRouter.post('/reset/:token', catchAsync(async(req, res, next) => {
     *
     */
     if(expireTime + user.resetTokenCreation.getTime()  < Date.now()){
-        res.status(401).json({error: 'token expired'});
+        res.status(410).json({error: 'token expired'});
     }
 
     await user.setPassword(req.body.password);
