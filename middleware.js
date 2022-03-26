@@ -1,8 +1,6 @@
 const Event = require('./models/event');
 const AppError = require('./utils/AppError');
 const catchAsync = require('./utils/catchAsync');
-const {userSchema, eventSchema, taskSchema} = require('./schemas.js');
-const mongoose = require('mongoose')
 
 //check if there is a logged in user
 
@@ -44,35 +42,3 @@ module.exports.isAdmin = catchAsync(async (req, res, next) => {
         next();
     }
 })
-
-///////////////////////////////////
-//backend data entry validators
-// module.exports.validateEvent = (req, res, next) => {
-//     const { error } = eventSchema.validate(req.body);
-//     if (error) {
-//         const msg = error.details.map(el => el.message).join(',')
-//         throw new AppError(msg, 400)
-//     } else {
-//         next();
-//     }
-// }
-
-// module.exports.validateUser = (req, res, next) => {
-//     const { error } = userSchema.validate(req.body);
-//     if (error) {
-//         const msg = error.details.map(el => el.message).join(',')
-//         throw new AppError(msg, 400)
-//     } else {
-//         next();
-//     }
-// }
-
-// module.exports.validateTask = (req, res, next) => {
-//     const { error } = taskSchema.validate(req.body);
-//     if (error) {
-//         const msg = error.details.map(el => el.message).join(',')
-//         throw new AppError(msg, 400)
-//     } else {
-//         next();
-//     }
-// }
