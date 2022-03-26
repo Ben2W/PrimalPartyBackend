@@ -3,7 +3,6 @@ const User = require('../models/user')
 const Task = require('../models/task')
 const Event = require('../models/event')
 
-const { userSchema, eventSchema, taskSchema } = require('../schemas.js');
 const catchAsync = require('../utils/catchAsync')
 const {isLoggedIn, isAdmin, isInvited} = require('../middleware'); 
 
@@ -182,11 +181,17 @@ eventRouter.get('/events/:eventId/tasks', isLoggedIn, isInvited, catchAsync(asyn
  *              
  */
 eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, isInvited, catchAsync(async(req, res) => {
-	const { taskId } = req.params;
-	const currTask = await Task.findById(taskId).populate('assignees')
-    if(!currTask) return res.status(404).json({error:'Task does not exist'})
+	const { taskId,eventId } = req.params;
+    const event = await Event.findById(eventId)
+    for (let task of event.tasks){
+        if (task == taskId){
+            const currTask = await Task.findById(taskId).populate('assignees')
+            if(!currTask) return res.status(404).json({error:'Task does not exist'})
 
-	res.json({ currTask });
+	        res.json({ currTask });
+        }
+     }
+     res.status(404).json({error:'task does not belong to this event'})
 }))
 
 
@@ -456,8 +461,10 @@ eventRouter.delete('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(r
         }
 
         else{
-            await Event.findByIdAndUpdate(event._id, {$pull: {guests: user._id}}, {new: true, runValidators: true})
+            await Event.findByIdAndUpdate(event._id, {$pull: {guests: req.user._id}}, {new: true, runValidators: true})
             await User.findByIdAndUpdate(user._id, {$pull: {events: event._id}}, {new: true, runValidators: true})
+            
+            await Task.updateMany({event:eventId}, {$pull:{assignees:req.user._id}}, {new:true, runValidators:true})
         }
     }
     catch(err)
@@ -580,7 +587,8 @@ eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catc
 
     const updateEvent =  await Event.findByIdAndUpdate(event._id, {$pull: {guests: guestId}}, {new: true, runValidators: true})
     await User.findByIdAndUpdate(req.user._id, {$pull: {events: event._id}}, {new: true, runValidators: true})
-    await Task.updateMany({}, {$pull: {assignees: req.user._id}}, {new: true, runValidators: true})
+
+    await Task.updateMany({event:eventId}, {$pull:{assignees:req.user._id}}, {new:true, runValidators:true})
 
     const remainingGuests = updateEvent.guests
     res.status(200).json({remainingGuests});

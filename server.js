@@ -9,13 +9,6 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const MongoStore = require('connect-mongo')(session);
 
-
-///////////////////////////////////
-// Utilities
-const AppError = require('./utils/AppError')
-const catchAsync = require('./utils/catchAsync')
-
-
 ///////////////////////////////////
 // Declaring routers
 const eventRoutes = require('./routes/eventRoutes');
@@ -35,19 +28,10 @@ const secret = process.env.SECRET
 ///////////////////////////////////
 // Database Models
 const User = require('./models/user')
-const Task = require('./models/task')
-const Event = require('./models/event')
 
-
-
-
-///////////////////////////////////
-//backend schema validators
-const { userSchema, eventSchema, taskSchema } = require('./schemas.js');
 
 ///////////////////////////////////
 // Middleware
-const {isLoggedIn, isAdmin} = require('./middleware') 
 const app = express()
 app.use(cors({
     origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://black-ocean-0eed1b40f.1.azurestaticapps.net'],
@@ -106,7 +90,7 @@ const sessionStore = new MongoStore({
 
 app.use(session({
 
-    secret: process.env.SECRET,
+    secret: secret,
     resave: false,
     saveUninitialized: true,
     store: sessionStore,
@@ -128,11 +112,6 @@ passport.use(new LocalStrategy(User.authenticate()));
 
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
-
-
-
-
-
 
 
 ///////////////////////////////////
