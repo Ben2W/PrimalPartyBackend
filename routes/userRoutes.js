@@ -502,47 +502,47 @@ userRouter.get('/account', isLoggedIn, catchAsync(async(req, res)=>{
  * @TODO Fix these before allows frontend to access them
  */
 
-// //delete your account
-// userRouter.delete('/account', isLoggedIn, catchAsync(async(req, res)=>{
-//     try{
-//         await User.findByIdAndDelete(req.user._id)
-//         return res.status(200).json({error:''})
-//     }catch(e){
-//         return res.status(500).json({error:'user could not be deleted'})
-//     }
-// }))
+//delete your account
+userRouter.delete('/account', isLoggedIn, catchAsync(async(req, res)=>{
+    try{
+        await User.findByIdAndDelete(req.user._id)
+        return res.status(200).json({error:''})
+    }catch(e){
+        return res.status(500).json({error:'user could not be deleted'})
+    }
+}))
 
-// //VERIFICATION NEEDS TO BE IMPLEMENTED WHEN U CHANGE YOUR EMAIL
-// //update your account
-// userRouter.put('/account', isLoggedIn, catchAsync(async(req, res)=>{
-//     try{
-//         const user = await User.findById(req.user._id)
-//         const {firstName=user.firstName, lastName=user.lastName, username=user.username, phone=user.phone, email=user.email} = req.body;
-//         if(firstName == '' || lastName =='' || username == '' || phone == '' || email == ''){return res.status(500).json({error:'Fields required'})}
+//VERIFICATION NEEDS TO BE IMPLEMENTED WHEN U CHANGE YOUR EMAIL
+//update your account
+userRouter.put('/account', isLoggedIn, catchAsync(async(req, res)=>{
+    try{
+        const user = await User.findById(req.user._id)
+        const {firstName=user.firstName, lastName=user.lastName, username=user.username, phone=user.phone, email=user.email} = req.body;
+        if(firstName == '' || lastName =='' || username == '' || phone == '' || email == ''){return res.status(500).json({error:'Fields required'})}
         
-//         const usersWithThatUsername = await User.find({username:username})
-//         if(usersWithThatUsername.length > 0 && (usersWithThatUsername.length > 1 || usersWithThatUsername[0]._id.toString() != req.user._id)){
-//             return res.status(500).json({error:'username is taken'})
-//         }
+        const usersWithThatUsername = await User.find({username:username})
+        if(usersWithThatUsername.length > 0 && (usersWithThatUsername.length > 1 || usersWithThatUsername[0]._id.toString() != req.user._id)){
+            return res.status(500).json({error:'username is taken'})
+        }
 
-//         const usersWithThatEmail = await User.find({email: email})
-//         if(usersWithThatEmail.lengt > 0 && (usersWithThatEmail.length > 1 || usersWithThatEmail[0]._id.toString() != req.user._id)){
-//             return res.status(500).json({error:'email is taken'})
-//         }
+        const usersWithThatEmail = await User.find({email: email})
+        if(usersWithThatEmail.lengt > 0 && (usersWithThatEmail.length > 1 || usersWithThatEmail[0]._id.toString() != req.user._id)){
+            return res.status(500).json({error:'email is taken'})
+        }
 
-//         const usersWithThatPhone= await User.find({phone:phone})
-//         if(usersWithThatPhone.length > 1 || usersWithThatPhone[0]._id.toString() != req.user._id){
-//             return res.status(500).json({error:'phone is taken'})
-//         }
+        const usersWithThatPhone= await User.find({phone:phone})
+        if(usersWithThatPhone.length > 1 || usersWithThatPhone[0]._id.toString() != req.user._id){
+            return res.status(500).json({error:'phone is taken'})
+        }
         
-//         await User.findByIdAndUpdate(req.user._id, {$set: {firstName : firstName, lastName:lastName, email:email, phone:phone, username:username}}, {new: true, runValidators: true});
+        await User.findByIdAndUpdate(req.user._id, {$set: {firstName : firstName, lastName:lastName, email:email, phone:phone, username:username}}, {new: true, runValidators: true});
         
-//         return res.status(200).json({error:''})
-//     }catch(e){
-//         console.log(e)
-//         return res.status(500).json({error:'user could not be updated'})
-//     }
-// }))
+        return res.status(200).json({error:''})
+    }catch(e){
+        console.log(e)
+        return res.status(500).json({error:'user could not be updated'})
+    }
+}))
 
 //Gets the user's friends list 
 /**
