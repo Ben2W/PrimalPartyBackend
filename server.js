@@ -89,20 +89,21 @@ const sessionStore = new MongoStore({
 });
 
 app.use(session({
-
-    secret: secret,
-    resave: false,
-    saveUninitialized: true,
-    store: sessionStore,
     cookie: {
-
-        httpOnly: false,
         expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
         maxAge: 1000 * 60 * 60 * 24, //Equals 1 day
         sameSite: "none",
         secure: true
-    }
+    },
+    proxy: true,
+    secret: secret,
+    resave: false,
+    saveUninitialized: true,
+    store: sessionStore,
+    rolling: true
 }))
+
+app.set('trust proxy', 1);
 
 ///////////////////////////////////
 //Passport Authentication
@@ -119,6 +120,11 @@ passport.deserializeUser(User.deserializeUser());
 
 ///////////////////////////////////
 //Routes
+
+app.use((req, res, next)=>{
+    req["session"].secure = true;
+    next();
+}); 
 
 app.use(swaggerRoutes);
 
