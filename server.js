@@ -88,18 +88,40 @@ const sessionStore = new MongoStore({
 
 });
 
-app.use(session({
 
+
+/*
+*   If we are in production we need to comply with Google Chromes's cookie requirements.
+*
+**/
+const secureVar = false
+const sameSiteVar = "strict"
+if(process.env.PRODUCTION == true){
+    sameSiteVar = "none"
+    secureVar = true
+
+    //Azure runs on a proxy, we need to trust proxies.
+    app.set('trust proxy', 1);
+}
+
+app.use(session({
+    cookie: {
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
+        maxAge: 1000 * 60 * 60 * 24, //Equals 1 day
+        sameSite: sameSiteVar,
+        secure: secureVar
+    },
+    proxy: true,
     secret: secret,
     resave: false,
     saveUninitialized: true,
     store: sessionStore,
-    cookie: {
-        httpOnly: true,
-        expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
-        maxAge: 1000 * 60 * 60 * 24 //Equals 1 day
-    }
+    rolling: true
 }))
+
+
+
+
 
 ///////////////////////////////////
 //Passport Authentication
