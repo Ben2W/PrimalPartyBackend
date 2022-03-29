@@ -94,14 +94,12 @@ app.use(session({
     resave: false,
     saveUninitialized: true,
     store: sessionStore,
-    secure: true,
-    sameSite: "none",
     cookie: {
-        httpOnly: true,
+        // httpOnly: true,
         expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
         maxAge: 1000 * 60 * 60 * 24, //Equals 1 day
-        // secure: true,
-        // sameSite: "none"
+        secure: true,
+        sameSite: "none"
     }
 }))
 
