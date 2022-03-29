@@ -126,7 +126,7 @@ const { MongoCursorInUseError } = require('mongodb');
             templateId: 'd-23227d40a12040e8be6404e3f1fd9b4b',
             dynamicTemplateData: {
             name: user.username,
-            link: url,
+            code: token.toString(),
                 },
             };
         
@@ -279,14 +279,14 @@ const { MongoCursorInUseError } = require('mongodb');
     /*
     * Prepare the email.
     */
-    const url = 'http://' + req.headers.host.toString() + /authorize/ + token.toString()
+    //const url = 'http://' + req.headers.host.toString() + /authorize/ + token.toString()
     const message = {
         to: email,
         from: 'no-reply@primaljet.com',
         templateId: 'd-23227d40a12040e8be6404e3f1fd9b4b',
         dynamicTemplateData: {
             name: user.username,
-            link: url,
+            code: token.toString(),
         },
     };
 
