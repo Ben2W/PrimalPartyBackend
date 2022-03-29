@@ -34,7 +34,7 @@ const User = require('./models/user')
 // Middleware
 const app = express()
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://black-ocean-0eed1b40f.1.azurestaticapps.net', 'https://frontend.primaljet.com', 'http://black-ocean-0eed1b40f.1.azurestaticapps.net', 'http://frontend.primaljet.com'],
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://black-ocean-0eed1b40f.1.azurestaticapps.net', 'https://frontend.primaljet.com'],
     credentials: true, //access-control-allow-credentials:true
     optionSuccessStatus:200,
 }))
@@ -97,7 +97,9 @@ app.use(session({
     cookie: {
         httpOnly: true,
         expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
-        maxAge: 1000 * 60 * 60 * 24 //Equals 1 day
+        maxAge: 1000 * 60 * 60 * 24, //Equals 1 day
+        secure: true,
+        sameSite: "none"
     }
 }))
 
