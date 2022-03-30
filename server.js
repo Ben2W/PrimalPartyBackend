@@ -94,9 +94,9 @@ const sessionStore = new MongoStore({
 *   If we are in production we need to comply with Google Chromes's cookie requirements.
 *
 **/
-let secureVar = false
-let sameSiteVar = "strict"
-if(process.env.PRODUCTION == true){
+secureVar = false
+sameSiteVar = "strict"
+if(process.env.PRODUCTION == 'true'){
     sameSiteVar = "none"
     secureVar = true
 
@@ -118,9 +118,6 @@ app.use(session({
     store: sessionStore,
     rolling: true
 }))
-
-
-
 
 
 ///////////////////////////////////

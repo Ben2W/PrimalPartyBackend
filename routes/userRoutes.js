@@ -119,7 +119,7 @@ const { MongoCursorInUseError } = require('mongodb');
         /*
         * Prepare the email.
         */
-        const url = 'http://' + req.headers.host.toString() + /authorize/ + token.toString()
+        //const url = 'http://' + req.headers.host.toString() + /authorize/ + token.toString()
         const message = {
             to: email,
             from: 'no-reply@primaljet.com',
