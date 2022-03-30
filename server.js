@@ -94,8 +94,8 @@ const sessionStore = new MongoStore({
 *   If we are in production we need to comply with Google Chromes's cookie requirements.
 *
 **/
-const secureVar = false
-const sameSiteVar = "strict"
+let secureVar = false
+let sameSiteVar = "strict"
 if(process.env.PRODUCTION == true){
     sameSiteVar = "none"
     secureVar = true
