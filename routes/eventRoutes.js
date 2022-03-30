@@ -28,6 +28,19 @@ const {isLoggedIn, isAdmin, isInvited} = require('../middleware');
 eventRouter.get('/events', isLoggedIn, catchAsync(async(req, res) => {
 	const id = req.user._id
 	const events = await Event.find({$or: [{guests:id}, {admin:id}]})
+    .populate({ 
+		path: 'tasks',
+		populate: {
+		  path: 'assignees',
+		  model: 'User'
+		} 
+	 })
+     .populate({ 
+		path: 'guests'
+	 })
+    .populate({
+        path: 'admin'
+    })
 	res.json({ events })
 }))
 
@@ -97,7 +110,20 @@ eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(asy
  */
 eventRouter.get('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(req, res) => {
 	const { eventId } = req.params;
-	const currEvent = await Event.findById(eventId).populate('guests').populate('tasks').populate('admin')
+	const currEvent = await Event.findById(eventId)
+    .populate({ 
+		path: 'tasks',
+		populate: {
+		  path: 'assignees',
+		  model: 'User'
+		} 
+	 })
+     .populate({ 
+		path: 'guests'
+	 })
+    .populate({
+        path: 'admin'
+    })
 	res.json({ currEvent });
 }))
 
@@ -657,19 +683,31 @@ eventRouter.post('/events/:eventId/tasks', isLoggedIn, isAdmin, catchAsync(async
 
     const {eventId} = req.params;
     const {name, description="", assignees = []} = req.body
-    
+
     if(name == '') return res.status(400).json({error:"name cannot be blank"})
 
-    const task = new Task({name:name, description:description, assignees:assignees, done:false, event:eventId})
+    if(assignees == []){
+        task = new Task({name:name, description:description, done:false, event:eventId})
+    } else {
+        task = new Task({name:name, description:description, assignees:assignees, done:false, event:eventId})
+    }
+    
+    //return res.status(400).json({error:"name cannot be blank"})
     
     await task.save()
     const event = await Event.findById(eventId);
     
     if(!event) return res.status(404).json({error:"Event does not exist"})
 
-    await Event.findByIdAndUpdate(event._id, { $addToSet: { tasks: task } }, {new: true, runValidators: true})
-
-    res.status(200).json({task});
+    const retval = await Event.findByIdAndUpdate(event._id, { $addToSet: { tasks: task } }, {new: true, runValidators: true})
+	.populate({ 
+		path: 'tasks',
+		populate: {
+		  path: 'assignees',
+		  model: 'User'
+		} 
+	 })
+    res.status(200).json({retval});
 }))
 
 //Delete a task from an event if the tesk is in the event
