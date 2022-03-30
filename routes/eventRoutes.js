@@ -111,7 +111,7 @@ eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(asy
 eventRouter.get('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(req, res) => {
 	const { eventId } = req.params;
 	const currEvent = await Event.findById(eventId)
-    .populate({ 
+        .populate({ 
 		path: 'tasks',
 		populate: {
 		  path: 'assignees',
@@ -350,7 +350,20 @@ eventRouter.put('/events/:eventId', isLoggedIn, isAdmin, catchAsync(async(req, r
     const {name=event.name, description=event.description, tags=event.tags, address=event.address, date=event.date} = req.body;
 
     if(name == '' || date == '' || address == ''){return res.status(500).json({error:'Fields required'})}
-    const updatedEvent = await Event.findByIdAndUpdate(eventId, {$set: {name : name, description : description, tags : tags, address : address, date : date}}, {new: true, runValidators: true});
+    const updatedEvent = await Event.findByIdAndUpdate(eventId, {$set: {name : name, description : description, tags : tags, address : address, date : date}}, {new: true, runValidators: true})    
+    .populate({ 
+		path: 'tasks',
+		populate: {
+		  path: 'assignees',
+		  model: 'User'
+		} 
+	 })
+     .populate({ 
+		path: 'guests'
+	 })
+    .populate({
+        path: 'admin'
+    });
     
     res.status(200).json({updatedEvent});
 }))
