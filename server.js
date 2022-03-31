@@ -132,3 +132,7 @@ app.use(errorRoutes);
 app.listen(8080, ()=>{
     console.log("listening on port 8080")
 })
+
+///////////////////////////////////
+// Required for unit testing
+module.exports = app;
