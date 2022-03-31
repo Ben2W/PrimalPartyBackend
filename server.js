@@ -34,7 +34,7 @@ const User = require('./models/user')
 // Middleware
 const app = express()
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://black-ocean-0eed1b40f.1.azurestaticapps.net', 'https://frontend.primaljet.com'],
+    origin: ['http://localhost:3000', 'http://localhost:19002','http://192.168.1.144:19002', 'http://127.0.0.1:3000', 'https://black-ocean-0eed1b40f.1.azurestaticapps.net', 'https://frontend.primaljet.com'],
     credentials: true, //access-control-allow-credentials:true
     optionSuccessStatus:200,
 }))
