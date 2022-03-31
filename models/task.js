@@ -22,7 +22,7 @@ const TaskSchema = new Schema({
     }],
     done:{
         type:Boolean,
-        deafult:false
+        default:false
     }
 }, {timestamps:true})
 

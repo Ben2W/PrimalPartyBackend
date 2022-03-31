@@ -34,12 +34,12 @@ const User = require('./models/user')
 // Middleware
 const app = express()
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://black-ocean-0eed1b40f.1.azurestaticapps.net', 'https://frontend.primaljet.com/'],
+    origin: ['http://localhost:3000', 'http://localhost:19002', 'http://192.168.1.144:19002', 'http://127.0.0.1:3000', 'https://black-ocean-0eed1b40f.1.azurestaticapps.net', 'https://frontend.primaljet.com'],
     credentials: true, //access-control-allow-credentials:true
-    optionSuccessStatus:200,
+    optionSuccessStatus: 200,
 }))
 
-app.use(express.urlencoded({extended:true}))
+app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 
 
@@ -68,11 +68,11 @@ db.once("open", () => {
 // Currently, the authentication uses it's own database setup in ./config/database: have it use the same database ASAP
 
 
-const sessionStore = new MongoStore({ 
+const sessionStore = new MongoStore({
 
 
-    mongooseConnection: db, 
-    collection: 'session' ,
+    mongooseConnection: db,
+    collection: 'session',
     /*
     * Because we are technically not using MongoDB, and using CosmoDB, some functionality is a little different
     *
@@ -88,18 +88,37 @@ const sessionStore = new MongoStore({
 
 });
 
-app.use(session({
 
+
+/*
+*   If we are in production we need to comply with Google Chromes's cookie requirements.
+*
+**/
+secureVar = false
+sameSiteVar = "strict"
+if (process.env.PRODUCTION == 'true') {
+    sameSiteVar = "none"
+    secureVar = true
+
+    //Azure runs on a proxy, we need to trust proxies.
+    app.set('trust proxy', 1);
+}
+
+app.use(session({
+    cookie: {
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
+        maxAge: 1000 * 60 * 60 * 24, //Equals 1 day
+        sameSite: sameSiteVar,
+        secure: secureVar
+    },
+    proxy: true,
     secret: secret,
     resave: false,
     saveUninitialized: true,
     store: sessionStore,
-    cookie: {
-        httpOnly: true,
-        expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
-        maxAge: 1000 * 60 * 60 * 24 //Equals 1 day
-    }
+    rolling: true
 }))
+
 
 ///////////////////////////////////
 //Passport Authentication
@@ -129,6 +148,6 @@ app.use(errorRoutes);
 
 ///////////////////////////////////
 //starting the server
-app.listen(8080, ()=>{
+app.listen(8080, () => {
     console.log("listening on port 8080")
 })

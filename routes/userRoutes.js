@@ -119,14 +119,14 @@ const { MongoCursorInUseError } = require('mongodb');
         /*
         * Prepare the email.
         */
-        const url = 'http://' + req.headers.host.toString() + /authorize/ + token.toString()
+        //const url = 'http://' + req.headers.host.toString() + /authorize/ + token.toString()
         const message = {
             to: email,
             from: 'no-reply@primaljet.com',
             templateId: 'd-23227d40a12040e8be6404e3f1fd9b4b',
             dynamicTemplateData: {
             name: user.username,
-            link: url,
+            code: token.toString(),
                 },
             };
         
@@ -279,14 +279,14 @@ const { MongoCursorInUseError } = require('mongodb');
     /*
     * Prepare the email.
     */
-    const url = 'http://' + req.headers.host.toString() + /authorize/ + token.toString()
+    //const url = 'http://' + req.headers.host.toString() + /authorize/ + token.toString()
     const message = {
         to: email,
         from: 'no-reply@primaljet.com',
         templateId: 'd-23227d40a12040e8be6404e3f1fd9b4b',
         dynamicTemplateData: {
             name: user.username,
-            link: url,
+            code: token.toString(),
         },
     };
 
@@ -592,7 +592,7 @@ userRouter.get('/friends', isLoggedIn, catchAsync(async(req, res)=>{
  *              
  *      responses:
  *          '200':
- *              description: event information.
+ *              description: friend information.
  *          '500':
  *              description: something went wrong while looking for friend
  *          '401':
@@ -732,8 +732,33 @@ userRouter.delete('/friends/:friendId', isLoggedIn, catchAsync(async(req,res)=>{
 }))
 
 //search users
+/**
+ * @swagger
+ * /users:
+ *  get:
+ *      description: view user information from search
+ *      tags:
+ *        - Friends 
+ *        - Get
+ *      parameters:
+ *          -   in: query
+ *              name: q
+ *              schema:
+ *                  type: string
+ *                  example: Emin
+ *              description: "Searches for a matching: firstName, lastName, username, email, or phone"
+ *              
+ *      responses:
+ *          '200':
+ *              description: found users information.
+ *          '500':
+ *              description: something went wrong while looking for users
+ *          '401':
+ *              description: you are not authenticated
+ */
 userRouter.get('/users',  isLoggedIn, catchAsync(async(req, res)=>{
     const {q} = req.query
+    console.log(req.query);
     await User.find({$and: [ {_id: {$ne:req.user._id}},
                     {$or: 
                         [{ "firstName": { "$regex": `${q}`, "$options": "i" }},
