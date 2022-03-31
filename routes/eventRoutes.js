@@ -214,7 +214,7 @@ eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, isInvited, catchAs
             const currTask = await Task.findById(taskId).populate('assignees')
             if(!currTask) return res.status(404).json({error:'Task does not exist'})
 
-	        res.json({ currTask });
+	        return res.status(200).json({currTask})
         }
      }
      res.status(404).json({error:'task does not belong to this event'})
