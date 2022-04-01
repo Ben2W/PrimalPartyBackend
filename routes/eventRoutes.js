@@ -44,6 +44,35 @@ eventRouter.get('/events', isLoggedIn, catchAsync(async(req, res) => {
 	res.json({ events })
 }))
 
+//View the tasks the user has assigned to them 
+/**
+ * @swagger
+ * /tasks:
+ *  get:
+ *      description: View the tasks the user has assigned to them 
+ *      tags:
+ *        - Events 
+ *        - Get
+ *      responses:
+ *          '200':
+ *              description: {{taskList}}
+ *          '401':
+ *              description: you are not authenticated
+ *          '500':
+ *              description: unexepected error
+ */
+ eventRouter.get('/tasks', isLoggedIn, catchAsync(async(req, res) => {
+	const id = req.user._id
+	const tasks = await Task.find({assignees : id})
+     .populate({ 
+		path: 'assignees'
+	 })
+    .populate({
+        path: 'event'
+    })
+	res.json({ tasks })
+}))
+
 // View the guests of a specific event
 /**
  * @swagger
