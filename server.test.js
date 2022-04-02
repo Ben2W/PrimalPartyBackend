@@ -42,8 +42,8 @@ describe("GET /events ", () => {
   })
 })
 
-describe("POST /events ", () => {
-  test("Create a new event", async () => {
+describe("POST /events and then DELETE /events/${id}", () => {
+  test("Creates a new event and then deletes it", async () => {
 	  const login = await request(app).post("/login").send({
 			username: "your",
 			password: "mom"
@@ -61,51 +61,17 @@ describe("POST /events ", () => {
 	
     expect(response.statusCode).toBe(200);
 	
-	/*const expected = 
-						{
-						  "newEvent": {
-							"name": "movienight",
-							"description": "movie night with the boys",
-							"tags": [
-							  "movie"
-							],
-							"address": "1333 something lane",
-							"date": "Monday",
-							"admin": {
-							  "emailAuthToken": "1a701401546ed68e3c27a40d8ecf77bc4b28ff3b",
-							  "_id": "623d37426ca4ddb28c558404",
-							  "firstName": "your",
-							  "lastName": "mom",
-							  "username": "your",
-							  "phone": "1231231239811",
-							  "email": "fysuqyse@musiccode.me",
-							  "emailAuthenticated": true,
-							  "friends": [],
-							  "pendingRequests": [],
-							  "events": [],
-							  "emailAuthTokenCreation": "2022-03-25T03:30:10.588Z",
-							  "resetTokenCreation": "2022-03-25T03:30:10.380Z",
-							  "createdAt": "2022-03-25T03:30:10.513Z",
-							  "updatedAt": "2022-03-30T20:52:25.749Z",
-							  "__v": 0
-							},
-							"guests": [],
-							"tasks": [],
-							"_id": "6244dfdd6ebe9a9ac8d30c08",
-							"createdAt": "2022-03-30T22:55:25.993Z",
-							"updatedAt": "2022-03-30T22:55:25.993Z",
-							"__v": 0
-						  }
-						}
-	expect(response.body).toEqual(expected)*/ // this wont work because the id changes each time
-	
 	expect(response.body.newEvent.name).toEqual("movienight");
 	expect(response.body.newEvent.description).toEqual("movie night with the boys");
 	expect(response.body.newEvent.tags[0]).toEqual("movie");
 	expect(response.body.newEvent.address).toEqual("1333 something lane");
 	expect(response.body.newEvent.date).toEqual("Monday");
 	
+	id = response.body.newEvent._id;
 	
+	const del = await request(app).delete(`/events/${id}`).set('cookie', cookie)
+	
+	expect(del.statusCode).toBe(200)
   })
 })
 
@@ -118,10 +84,9 @@ describe("GET /events/:eventId/guests", () => {
 	
 		cookie = login.headers['set-cookie'];
 	//6245d6946ebe9a9ac8d30cf0
-		const response = await request(app).get("/events/6245d6946ebe9a9ac8d30cf0/guests").set('cookie', cookie)
+		const response = await request(app).get("/events/6244dd656ebe9a9ac8d30bed/guests").set('cookie', cookie)
 		
 		expect(response.statusCode).toBe(200);
-		//expect(response.body.length).toBeGreaterThanOrEqual(0);
 	})
 })
 
@@ -134,7 +99,7 @@ describe("POST /events/:eventId/guests/:guestId", () => {
 	
 		cookie = login.headers['set-cookie'];
 	
-		const response = await request(app).post("/events/6244dfdd6ebe9a9ac8d30c08/guests/623cf2b92f5edc1694f36fb6").set('cookie', cookie)
+		const response = await request(app).post("/events/6244dd656ebe9a9ac8d30bed/guests/623cf2b92f5edc1694f36fb6").set('cookie', cookie)
 		
 		expect(response.statusCode).toBe(200);
 		//expect(response.body.length).toBeGreaterThanOrEqual(0);
@@ -150,7 +115,7 @@ describe("DELETE /events/:eventId/guests/:guestId", () => {
 	
 		cookie = login.headers['set-cookie'];
 	
-		const response = await request(app).delete("/events/6244dfdd6ebe9a9ac8d30c08/guests/623cf2b92f5edc1694f36fb6").set('cookie', cookie)
+		const response = await request(app).delete("/events/6244dd656ebe9a9ac8d30bed/guests/623cf2b92f5edc1694f36fb6").set('cookie', cookie)
 		
 		expect(response.statusCode).toBe(200);
 		//expect(response.body.length).toBeGreaterThanOrEqual(0);
@@ -166,23 +131,20 @@ describe("GET /events/:eventId", () => {
 	
 		cookie = login.headers['set-cookie'];
 		
-		/*const events = await request(app).post("/events").send({
-			name: "movienight5",
-			description: "movie night with the boys",
-			tags: "movie",
-			address: "1333 something lane",
-			date: "Monday"
+		const events = await request(app).post("/events").send({
+			name: "test",
+			description: "test",
+			tags: "test",
+			address: "test",
+			date: "test"
 		}).set('cookie', cookie)
 		
 		id = events.body.newEvent._id
-		console.log(id)
 		
-		expect(id).toBeDefined()*/
-		
-		const response = await request(app).get("/events/6245e5397fdb13cd895954e5").set('cookie', cookie)
+		const response = await request(app).get(`/events/${id}`).set('cookie', cookie)
 			
 		expect(response.statusCode).toBe(200);
-		expect(response.body.currEvent.name).toEqual("movienight3")
+		expect(response.body.currEvent.name).toEqual("test")
 		
 		
 	})
@@ -253,7 +215,15 @@ describe("POST /events/:eventId/tasks", () => {
 			
 		}).set('cookie', cookie)
 		expect(response.statusCode).toBe(200);
+		
+		
+		/*id = response.body.retval._id;
+		
+		const del = await request(app).delete(`/events/${id}`).set('cookie', cookie)
+		
+		expect(del.statusCode).toBe(200)*/
 	})
+	
 })
 
 describe("GET /events/:eventId/tasks/:taskId", () => {
@@ -267,6 +237,34 @@ describe("GET /events/:eventId/tasks/:taskId", () => {
 	
 		const response = await request(app).get("/events/6245e5397fdb13cd895954e5/tasks/6245f254eadfbef07637aa4d").set('cookie', cookie)
 		expect(response.statusCode).toBe(200);
+	})
+})
+
+describe("PUT /events/:eventId/tasks/:taskId", () => {
+	test("Edit the details of a task of a specific event", async () => {
+		const login = await request(app).post("/login").send({
+			username: "your",
+			password: "mom"
+	})      
+	
+	cookie = login.headers['set-cookie'];
+	
+		const response = await request(app).put("/events/6245e5397fdb13cd895954e5/tasks/6245f254eadfbef07637aa4d").send({
+			name: "test",
+			description: "bring chocolate chip and sugar cookies",
+			assignees: "623cf2b92f5edc1694f36fb6",
+			done: "false"
+		}).set('cookie', cookie)
+		expect(response.statusCode).toBe(200);
+		
+		const undo = await request(app).put("/events/6245e5397fdb13cd895954e5/tasks/6245f254eadfbef07637aa4d").send({
+			name: "Bring cookies",
+			description: "bring chocolate chip and sugar cookies",
+			assignees: "623cf2b92f5edc1694f36fb6",
+			done: "false"
+		}).set('cookie', cookie)
+			
+		expect(undo.statusCode).toBe(200);
 	})
 })
 
@@ -308,4 +306,54 @@ describe("LOGIN /login", () => {
 	expect(response.body.user.lastName).toEqual("mom");
 	expect(response.statusCode).toBe(200);
 	})
+})
+
+describe("GET /account ", () => {
+  test("Get user's account info", async () => {
+	  const login = await request(app).post("/login").send({
+			username: "your",
+			password: "mom"
+	})
+	
+	cookie = login.headers['set-cookie'];
+	
+    const response = await request(app).get("/account").set('cookie', cookie)
+    expect(response.statusCode).toBe(200);
+	expect(response.body.user.firstName).toEqual("your")
+	expect(response.body.user.lastName).toEqual("mom")
+  })
+})
+
+describe("GET /friends ", () => {
+  test("Get user's friends)", async () => {
+	  const login = await request(app).post("/login").send({
+			username: "your",
+			password: "mom"
+	})
+	
+	cookie = login.headers['set-cookie'];
+	
+    const response = await request(app).get("/friends").set('cookie', cookie)
+    expect(response.statusCode).toBe(200);
+  })
+})
+
+describe("POST /friends/:friendId GET it and then DELETE", () => {
+  test("Add a friend and then delete them)", async () => {
+	  const login = await request(app).post("/login").send({
+			username: "your",
+			password: "mom"
+	})
+	
+	cookie = login.headers['set-cookie'];
+	
+    const response = await request(app).post("/friends/623cf2b92f5edc1694f36fb6").set('cookie', cookie)
+    expect(response.statusCode).toBe(200);
+	
+	const check = await request(app).get("/friends/623cf2b92f5edc1694f36fb6").set('cookie', cookie)
+    expect(check.statusCode).toBe(200);
+	
+	const del = await request(app).delete("/friends/623cf2b92f5edc1694f36fb6").set('cookie', cookie)
+    expect(del.statusCode).toBe(200);
+  })
 })
