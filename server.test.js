@@ -188,6 +188,41 @@ describe("GET /events/:eventId", () => {
 	})
 })
 
+describe("PUT /events/:eventId", () => {
+	test("Update a specific event", async () => {
+		const login = await request(app).post("/login").send({
+			username: "your",
+			password: "mom"
+		})      
+	
+		cookie = login.headers['set-cookie'];
+		
+		const response = await request(app).put("/events/6244dd656ebe9a9ac8d30bed").send({
+			name: "movienighttest",
+			description: "movie night with the boys",
+			tags: "movie",
+			address: "1333 something lane",
+			date: "Monday"
+		}).set('cookie', cookie)
+			
+		expect(response.statusCode).toBe(200);
+		expect(response.body.updatedEvent.name).toEqual("movienighttest")
+		expect(response.body.updatedEvent.date).toEqual("Monday")
+		
+		const undo = await request(app).put("/events/6244dd656ebe9a9ac8d30bed").send({
+			name: "movienight3",
+			description: "movie night with the boys",
+			tags: "movie",
+			address: "1333 something lane",
+			date: "Monday"
+		}).set('cookie', cookie)
+			
+		expect(undo.statusCode).toBe(200);
+		expect(undo.body.updatedEvent.name).toEqual("movienight3")
+		expect(undo.body.updatedEvent.date).toEqual("Monday")
+	})
+})
+
 describe("GET /events/:eventId/tasks", () => {
 	test("View the tasks of a specific event", async () => {
 		const login = await request(app).post("/login").send({
