@@ -91,7 +91,7 @@ describe("POST /events GET /events/:eventId and then DELETE /events/:eventId", (
   })
 })
 
-describe("POST /events/:eventId/guests/:guestId", () => {
+/*describe("POST /events/:eventId/guests/:guestId", () => {
 	test("Adds a guest to an event", async () => {
 		const login = await request(app).post("/login").send({
 			username: "your",
@@ -105,9 +105,9 @@ describe("POST /events/:eventId/guests/:guestId", () => {
 		expect(response.statusCode).toBe(200);
 		expect(response.body.newGuest.lastName).toEqual("Joe")
 	})
-})
+})*/
 
-describe("GET /events/:eventId/guests", () => {
+/*describe("GET /events/:eventId/guests", () => {
 	test("Gets the guests from an event", async () => {
 		const login = await request(app).post("/login").send({
 			username: "your",
@@ -121,9 +121,9 @@ describe("GET /events/:eventId/guests", () => {
 		expect(response.statusCode).toBe(200);
 		expect(response.body.guests[0].lastName).toEqual("Joe")
 	})
-})
+})*/
 
-describe("DELETE /events/:eventId/guests/:guestId", () => {
+/*describe("DELETE /events/:eventId/guests/:guestId", () => {
 	test("Deletes a guest of an event", async () => {
 		const login = await request(app).post("/login").send({
 			username: "your",
@@ -135,7 +135,46 @@ describe("DELETE /events/:eventId/guests/:guestId", () => {
 		const response = await request(app).delete("/events/6244dd656ebe9a9ac8d30bed/guests/623cf2b92f5edc1694f36fb6").set('cookie', cookie)
 		
 		expect(response.statusCode).toBe(200);
-		//expect(response.body.length).toBeGreaterThanOrEqual(0);
+	})
+})*/
+
+describe("POST /events/:eventId/guests/:guestId, GET /events/:eventId/guests, DELETE /events/:eventId/guests/:guestId", () => {
+	test("Creates an event, adds a guest to it, gets the guest, deletes the guest and event", async () => {
+	const login = await request(app).post("/login").send({
+			username: "your",
+			password: "mom"
+		})   
+		
+		cookie = login.headers['set-cookie'];
+		
+		const newEv = await request(app).post("/events").send({
+		name: "testing tasks",
+		description: "event to test tasks",
+		tags: "test",
+		address: "1333 something lane",
+		date: "Monday"
+		}).set('cookie', cookie)
+	
+		expect(newEv.statusCode).toBe(200);
+		id = newEv.body.newEvent._id
+		
+		const response = await request(app).post(`/events/${id}/guests/623cf2b92f5edc1694f36fb6`).set('cookie', cookie)
+		
+		expect(response.statusCode).toBe(200);
+		expect(response.body.newGuest.lastName).toEqual("Joe")
+		
+		const check = await request(app).get(`/events/${id}/guests`).set('cookie', cookie)
+		
+		expect(check.statusCode).toBe(200);
+		expect(check.body.guests[0].lastName).toEqual("Joe")
+		
+		const del = await request(app).delete(`/events/${id}/guests/623cf2b92f5edc1694f36fb6`).set('cookie', cookie)
+		
+		expect(del.statusCode).toBe(200);
+		
+		const delE = await request(app).delete(`/events/${id}`).set('cookie', cookie)
+	
+		expect(delE.statusCode).toBe(200)
 	})
 })
 
