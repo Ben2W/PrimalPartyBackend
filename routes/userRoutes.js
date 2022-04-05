@@ -3,8 +3,8 @@ const User = require('../models/user')
 const passport = require('passport');
 
 const catchAsync = require('../utils/catchAsync');
-const {isLoggedIn} = require('../middleware.js')
-const AppError =  require('../utils/AppError')
+const { isLoggedIn } = require('../middleware.js')
+const AppError = require('../utils/AppError')
 
 // Sets up sendgrid dependancies.
 const sgMail = require('@sendgrid/mail')
@@ -77,28 +77,28 @@ const { MongoCursorInUseError } = require('mongodb');
  *              description: username already taken
  *              
  */
- userRouter.post('/register', catchAsync(async(req, res, next) => {
+userRouter.post('/register', catchAsync(async (req, res, next) => {
     try {
-        
+
 
         //Make sure the email and username are unique.
-        const {username, email, phone} = req.body
-        const duplicateUsername = await User.exists({username: username});
-        const duplicateEmail = await User.exists({email: email});
-        const duplicatePhone = await User.exists({phone:phone})
+        const { username, email, phone } = req.body
+        const duplicateUsername = await User.exists({ username: username });
+        const duplicateEmail = await User.exists({ email: email });
+        const duplicatePhone = await User.exists({ phone: phone })
 
-        if (duplicateEmail && duplicateUsername && duplicatePhone) return res.status(410).json({error: 'username, phone, and email already taken'})
-        if (duplicateEmail) return res.status(411).json({error: 'email already taken'})
-        if (duplicateUsername) return res.status(412).json({error: 'username already taken'})
-        if (duplicatePhone) return res.status(412).json({error: 'phone already taken'})
- 
-
+        if (duplicateEmail && duplicateUsername && duplicatePhone) return res.status(410).json({ error: 'username, phone, and email already taken' })
+        if (duplicateEmail) return res.status(411).json({ error: 'email already taken' })
+        if (duplicateUsername) return res.status(412).json({ error: 'username already taken' })
+        if (duplicatePhone) return res.status(412).json({ error: 'phone already taken' })
 
 
-        const {password, ...rest} = req.body
+
+
+        const { password, ...rest } = req.body
         const user = new User(rest);
         const registeredUser = await User.register(user, password);
-        
+
 
         /**
          * Bypasses email authorization
@@ -107,15 +107,15 @@ const { MongoCursorInUseError } = require('mongodb');
          * 
          */
 
-        if(process.env.BYPASS_EMAIL_AUTH == 'true') {
-            await user.updateOne({emailAuthenticated: true});
-            return res.status(200).json({status: 'Registered account and authorized email'})
-        } 
+        if (process.env.BYPASS_EMAIL_AUTH == 'true') {
+            await user.updateOne({ emailAuthenticated: true });
+            return res.status(200).json({ status: 'Registered account and authorized email' })
+        }
 
         // Generate the token and add it to the DB
         token = crypto.randomBytes(20).toString('hex');
-        await user.updateOne({emailAuthToken: token, emailAuthTokenCreation: Date.now()});
-        
+        await user.updateOne({ emailAuthToken: token, emailAuthTokenCreation: Date.now() });
+
         /*
         * Prepare the email.
         */
@@ -125,19 +125,19 @@ const { MongoCursorInUseError } = require('mongodb');
             from: 'no-reply@primaljet.com',
             templateId: 'd-23227d40a12040e8be6404e3f1fd9b4b',
             dynamicTemplateData: {
-            name: user.username,
-            code: token.toString(),
-                },
-            };
-        
-        
+                name: user.username,
+                code: token.toString(),
+            },
+        };
+
+
         //@TODO: Properly handle these errors.
         sgMail.send(message)
-            .then(response => res.json({status: 'email sent'}))
-        .catch(err => res.status(501).json({error: 'email cannot be sent'}));
+            .then(response => res.json({ status: 'email sent' }))
+            .catch(err => res.status(501).json({ error: 'email cannot be sent' }));
 
     } catch (e) {
-        return res.status(500).json({error: 'there has been an issue creating an account'})
+        return res.status(500).json({ error: 'there has been an issue creating an account' })
     }
 }))
 
@@ -179,18 +179,18 @@ const { MongoCursorInUseError } = require('mongodb');
  *          '400':
  *              description: This user could not be found OR Wrong Password OR Email needs to be authenticated    
  */
- userRouter.post('/login', (req, res, next) => {
-    passport.authenticate('local', function(err, user, info) {
-      if (err) { return res.status(500).json({error: 'there is an issue logging in'}) }
-  
-      // This error throws if email is not authorized OR the username is not valid
-      if (!user) { return res.status(400).json({error: 'This user could not be found OR Wrong Password OR Email needs to be authenticated'}) }
-      req.logIn(user, function(err) {
-        if (err) { return res.status(500).json({error: 'there is an issue logging in'}) }
-        return res.json({user})
-      });
+userRouter.post('/login', (req, res, next) => {
+    passport.authenticate('local', function (err, user, info) {
+        if (err) { return res.status(500).json({ error: 'there is an issue logging in' }) }
+
+        // This error throws if email is not authorized OR the username is not valid
+        if (!user) { return res.status(400).json({ error: 'This user could not be found OR Wrong Password OR Email needs to be authenticated' }) }
+        req.logIn(user, function (err) {
+            if (err) { return res.status(500).json({ error: 'there is an issue logging in' }) }
+            return res.json({ user })
+        });
     })(req, res, next);
-  });
+});
 
 //Sends another authorization email for user.
 /**
@@ -230,25 +230,25 @@ const { MongoCursorInUseError } = require('mongodb');
  *              description: email invalid
  *              
  */
- userRouter.put('/resendauthorization', catchAsync(async(req, res, next) => {
+userRouter.put('/resendauthorization', catchAsync(async (req, res, next) => {
 
     email = req.body.email;
     // @TODO: add more ways an email can be invalid
-    if (email == undefined){
-        return res.status(412).json({error: 'email invalid'});
+    if (email == undefined) {
+        return res.status(412).json({ error: 'email invalid' });
     }
 
 
     //@TODO: This call is more efficient than findOne => updateOne, but findOneAndUpdate is automatically generating emails for some reason???
     //const user = await User.findOneAndUpdate({email: email, resetToken: token});
 
-    const user = await User.findOne({email: email});
-    if(!user){
-        return res.status(404).json({error: 'user not found'});
+    const user = await User.findOne({ email: email });
+    if (!user) {
+        return res.status(404).json({ error: 'user not found' });
     }
 
-    if(user.emailAuthenticated){
-        return res.status(410).json({error: 'this email is already authenticated'});
+    if (user.emailAuthenticated) {
+        return res.status(410).json({ error: 'this email is already authenticated' });
     }
 
 
@@ -259,7 +259,7 @@ const { MongoCursorInUseError } = require('mongodb');
     *  *NOTE* Azure will set the environment variable to 15 seconds regardless of what you set spamCooldown to.
     */
     spamCooldown = 1500
-    if(process.env.RESET_SPAM_COOLDOWN != undefined){
+    if (process.env.RESET_SPAM_COOLDOWN != undefined) {
         spamCooldown = process.env.RESET_SPAM_COOLDOWN
     }
 
@@ -269,11 +269,11 @@ const { MongoCursorInUseError } = require('mongodb');
     * If we are past the email cooldown, update the user in the DB with a generated reset token.
     */
 
-    if(Date.now() - user.emailAuthTokenCreation < spamCooldown){
-        return res.status(409).json({error: 'please wait at least 15 seconds between sending emails'})
+    if (Date.now() - user.emailAuthTokenCreation < spamCooldown) {
+        return res.status(409).json({ error: 'please wait at least 15 seconds between sending emails' })
     }
     token = crypto.randomBytes(20).toString('hex');
-    await user.updateOne({emailAuthToken: token, emailAuthTokenCreation: Date.now()});
+    await user.updateOne({ emailAuthToken: token, emailAuthTokenCreation: Date.now() });
 
 
     /*
@@ -293,9 +293,9 @@ const { MongoCursorInUseError } = require('mongodb');
 
     //@TODO: Properly handle these errors.
     sgMail.send(message)
-        .then(response => res.json({status: 'email sent'}))
-    .catch(err => res.status(503).json({error: 'email cannot be sent'}));
-})); 
+        .then(response => res.json({ status: 'email sent' }))
+        .catch(err => res.status(503).json({ error: 'email cannot be sent' }));
+}));
 
 /**
  * @swagger
@@ -324,14 +324,14 @@ const { MongoCursorInUseError } = require('mongodb');
  *          '410':
  *              description: this token is expired
  */
- userRouter.get('/authorize/:token', catchAsync(async(req, res, next) => {
+userRouter.get('/authorize/:token', catchAsync(async (req, res, next) => {
 
 
     console.log(req.params.token);
-    const user = await User.findOne({emailAuthToken: req.params.token});
+    const user = await User.findOne({ emailAuthToken: req.params.token });
 
-    if(!user){
-        return res.status(404).json({error: 'this token is invalid'});
+    if (!user) {
+        return res.status(404).json({ error: 'this token is invalid' });
     }
 
 
@@ -342,7 +342,7 @@ const { MongoCursorInUseError } = require('mongodb');
     *  *NOTE* Azure will set the environment variable to 15 seconds regardless of what you set spamCooldown to.
     */
     expireTime = 86400000 //1 day in ms
-    if(process.env.EMAIL_RESET_EXPIRE_TIME != undefined){
+    if (process.env.EMAIL_RESET_EXPIRE_TIME != undefined) {
         spamCooldown = process.env.EMAIL_RESET_EXPIRE_TIME
     }
 
@@ -351,11 +351,11 @@ const { MongoCursorInUseError } = require('mongodb');
     *
     */
 
-    if(expireTime + user.emailAuthTokenCreation.getTime()  < Date.now()){
-        res.status(410).json({error: 'token expired'});
+    if (expireTime + user.emailAuthTokenCreation.getTime() < Date.now()) {
+        res.status(410).json({ error: 'token expired' });
     }
 
-    res.json({status: 'this token is valid'})
+    res.json({ status: 'this token is valid' })
 
 }));
 
@@ -387,22 +387,22 @@ const { MongoCursorInUseError } = require('mongodb');
  *              description: token has expired
  *              
  */
- userRouter.post('/authorize/:token', catchAsync(async(req, res, next) => {
-    const user = await User.findOne({emailAuthToken: req.params.token});
+userRouter.post('/authorize/:token', catchAsync(async (req, res, next) => {
+    const user = await User.findOne({ emailAuthToken: req.params.token });
 
-    if(!user){
-        return res.status(400).json({error: 'this token is invalid'});
+    if (!user) {
+        return res.status(400).json({ error: 'this token is invalid' });
     }
 
 
-     /* 
-    *  
-    *  Set expire time to the amount of time a token is valid. Azure will use a environment variable so changing "expireTime" wont affect the remote server.
-    *  
-    *  *NOTE* Azure will set the environment variable to 15 seconds regardless of what you set spamCooldown to.
-    */
+    /* 
+   *  
+   *  Set expire time to the amount of time a token is valid. Azure will use a environment variable so changing "expireTime" wont affect the remote server.
+   *  
+   *  *NOTE* Azure will set the environment variable to 15 seconds regardless of what you set spamCooldown to.
+   */
     expireTime = 86400000 //1 day in ms
-    if(process.env.EMAIL_RESET_EXPIRE_TIME != undefined){
+    if (process.env.EMAIL_RESET_EXPIRE_TIME != undefined) {
         spamCooldown = process.env.EMAIL_RESET_EXPIRE_TIME
     }
 
@@ -410,19 +410,19 @@ const { MongoCursorInUseError } = require('mongodb');
     * If the token is expired, error.
     *
     */
-    if(expireTime + user.emailAuthTokenCreation.getTime()  < Date.now()){
-        res.status(410).json({error: 'token expired'});
+    if (expireTime + user.emailAuthTokenCreation.getTime() < Date.now()) {
+        res.status(410).json({ error: 'token expired' });
     }
 
-    await user.updateOne({emailAuthenticated: true});
+    await user.updateOne({ emailAuthenticated: true });
 
-    
+
     req.login(user, err => {
         if (err) {
-            return res.status(500).json({error: 'there has been an issue logging in to your account'})
+            return res.status(500).json({ error: 'there has been an issue logging in to your account' })
         }
-        res.status(200).json({error:'Accounted Authenticated and logged in'})
-        
+        res.status(200).json({ response: 'Accounted Authenticated and logged in', user: user })
+
     })
 
 }));
@@ -444,9 +444,9 @@ const { MongoCursorInUseError } = require('mongodb');
  *              description: you do not have access to this page
  *              
  */
-userRouter.get('/protected', isLoggedIn,  catchAsync(async(req, res, next) => {
+userRouter.get('/protected', isLoggedIn, catchAsync(async (req, res, next) => {
     return res.json({ status: 'success' })
-})); 
+}));
 
 
 /**
@@ -466,12 +466,12 @@ userRouter.get('/protected', isLoggedIn,  catchAsync(async(req, res, next) => {
  *              description: an unexpected error has occured
  *              
  */
-userRouter.post('/logout', isLoggedIn, (req,res)=>{
-    try{
+userRouter.post('/logout', isLoggedIn, (req, res) => {
+    try {
         req.logout()
-        return res.status(200).json({error:''})
-    }catch(e){
-        throw new AppError(e,500)
+        return res.status(200).json({ error: '' })
+    } catch (e) {
+        throw new AppError(e, 500)
     }
 })
 
@@ -493,9 +493,9 @@ userRouter.post('/logout', isLoggedIn, (req,res)=>{
  *              description: an unexpected error occured
  *              
  */
-userRouter.get('/account', isLoggedIn, catchAsync(async(req, res)=>{
-    const user =  await User.findById(req.user._id).populate('events').populate('friends')
-    return res.status(200).json({user})
+userRouter.get('/account', isLoggedIn, catchAsync(async (req, res) => {
+    const user = await User.findById(req.user._id).populate('events').populate('friends')
+    return res.status(200).json({ user })
 }))
 
 /**
@@ -503,44 +503,44 @@ userRouter.get('/account', isLoggedIn, catchAsync(async(req, res)=>{
  */
 
 //delete your account
-userRouter.delete('/account', isLoggedIn, catchAsync(async(req, res)=>{
-    try{
+userRouter.delete('/account', isLoggedIn, catchAsync(async (req, res) => {
+    try {
         await User.findByIdAndDelete(req.user._id)
-        return res.status(200).json({error:''})
-    }catch(e){
-        return res.status(500).json({error:'user could not be deleted'})
+        return res.status(200).json({ error: '' })
+    } catch (e) {
+        return res.status(500).json({ error: 'user could not be deleted' })
     }
 }))
 
 //VERIFICATION NEEDS TO BE IMPLEMENTED WHEN U CHANGE YOUR EMAIL
 //update your account
-userRouter.put('/account', isLoggedIn, catchAsync(async(req, res)=>{
-    try{
+userRouter.put('/account', isLoggedIn, catchAsync(async (req, res) => {
+    try {
         const user = await User.findById(req.user._id)
-        const {firstName=user.firstName, lastName=user.lastName, username=user.username, phone=user.phone, email=user.email} = req.body;
-        if(firstName == '' || lastName =='' || username == '' || phone == '' || email == ''){return res.status(500).json({error:'Fields required'})}
-        
-        const usersWithThatUsername = await User.find({username:username})
-        if(usersWithThatUsername.length > 0 && (usersWithThatUsername.length > 1 || usersWithThatUsername[0]._id.toString() != req.user._id)){
-            return res.status(500).json({error:'username is taken'})
+        const { firstName = user.firstName, lastName = user.lastName, username = user.username, phone = user.phone, email = user.email } = req.body;
+        if (firstName == '' || lastName == '' || username == '' || phone == '' || email == '') { return res.status(500).json({ error: 'Fields required' }) }
+
+        const usersWithThatUsername = await User.find({ username: username })
+        if (usersWithThatUsername.length > 0 && (usersWithThatUsername.length > 1 || usersWithThatUsername[0]._id.toString() != req.user._id)) {
+            return res.status(500).json({ error: 'username is taken' })
         }
 
-        const usersWithThatEmail = await User.find({email: email})
-        if(usersWithThatEmail.lengt > 0 && (usersWithThatEmail.length > 1 || usersWithThatEmail[0]._id.toString() != req.user._id)){
-            return res.status(500).json({error:'email is taken'})
+        const usersWithThatEmail = await User.find({ email: email })
+        if (usersWithThatEmail.lengt > 0 && (usersWithThatEmail.length > 1 || usersWithThatEmail[0]._id.toString() != req.user._id)) {
+            return res.status(500).json({ error: 'email is taken' })
         }
 
-        const usersWithThatPhone= await User.find({phone:phone})
-        if(usersWithThatPhone.length > 1 || usersWithThatPhone[0]._id.toString() != req.user._id){
-            return res.status(500).json({error:'phone is taken'})
+        const usersWithThatPhone = await User.find({ phone: phone })
+        if (usersWithThatPhone.length > 1 || usersWithThatPhone[0]._id.toString() != req.user._id) {
+            return res.status(500).json({ error: 'phone is taken' })
         }
-        
-        await User.findByIdAndUpdate(req.user._id, {$set: {firstName : firstName, lastName:lastName, email:email, phone:phone, username:username}}, {new: true, runValidators: true});
-        
-        return res.status(200).json({error:''})
-    }catch(e){
+
+        await User.findByIdAndUpdate(req.user._id, { $set: { firstName: firstName, lastName: lastName, email: email, phone: phone, username: username } }, { new: true, runValidators: true });
+
+        return res.status(200).json({ error: '' })
+    } catch (e) {
         console.log(e)
-        return res.status(500).json({error:'user could not be updated'})
+        return res.status(500).json({ error: 'user could not be updated' })
     }
 }))
 
@@ -561,14 +561,14 @@ userRouter.put('/account', isLoggedIn, catchAsync(async(req, res)=>{
  *          '500':
  *              description: unexepected error
  */
-userRouter.get('/friends', isLoggedIn, catchAsync(async(req, res)=>{
+userRouter.get('/friends', isLoggedIn, catchAsync(async (req, res) => {
 
-    try{
+    try {
         const user = await User.findById(req.user._id).populate('friends')
         const friends = user.friends
-        return res.status(200).json({friends})
-    }catch(e){
-        return res.status(500).json({error:'could not find friends'})
+        return res.status(200).json({ friends })
+    } catch (e) {
+        return res.status(500).json({ error: 'could not find friends' })
     }
 }))
 
@@ -602,23 +602,23 @@ userRouter.get('/friends', isLoggedIn, catchAsync(async(req, res)=>{
  *          '403':
  *              description: cannot add yourself to your friends list
  */
-userRouter.get('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
-    try{
+userRouter.get('/friends/:friendId', isLoggedIn, catchAsync(async (req, res) => {
+    try {
         const user = await User.findById(req.user._id).populate('friends')
-        const {friendId} = req.params
+        const { friendId } = req.params
 
-        if(friendId == req.user._id){
-            return res.status(403).json({error:'cannot view yourself in your friends list'})
+        if (friendId == req.user._id) {
+            return res.status(403).json({ error: 'cannot view yourself in your friends list' })
         }
 
-        for (let friend of user.friends){
-            if (friend._id.toString() == friendId){
-                return res.status(200).json({friend})
+        for (let friend of user.friends) {
+            if (friend._id.toString() == friendId) {
+                return res.status(200).json({ friend })
             }
         }
-        return res.status(404).json({error:'no such user in your friends list'})
-    }catch(e){
-        return res.status(500).json({error:'something went wrong while looking for friend'})
+        return res.status(404).json({ error: 'no such user in your friends list' })
+    } catch (e) {
+        return res.status(500).json({ error: 'something went wrong while looking for friend' })
     }
 }))
 
@@ -657,24 +657,24 @@ userRouter.get('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
  * 
  * 
  */
-userRouter.post('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
+userRouter.post('/friends/:friendId', isLoggedIn, catchAsync(async (req, res) => {
     const user = await User.findById(req.user._id).populate('friends')
-    const {friendId} = req.params
+    const { friendId } = req.params
 
-    if(friendId == req.user._id){
-        return res.status(405).json({error:'cannot add yourself to your friends list'})
+    if (friendId == req.user._id) {
+        return res.status(405).json({ error: 'cannot add yourself to your friends list' })
     }
 
-    for (let friend of user.friends){
-        if(friend._id.toString() == friendId){
-            return res.status(409).json({error:'this user is already in your friends list'})
+    for (let friend of user.friends) {
+        if (friend._id.toString() == friendId) {
+            return res.status(409).json({ error: 'this user is already in your friends list' })
         }
     }
 
     const friend = await User.findById(friendId)
-    await User.findByIdAndUpdate(user._id, { $addToSet: { friends: friend._id } }, {new: true, runValidators: true})
-    await User.findByIdAndUpdate(friend._id, { $addToSet: { friends: user._id } }, {new: true, runValidators: true})
-    return res.status(200).json({error:''})
+    await User.findByIdAndUpdate(user._id, { $addToSet: { friends: friend._id } }, { new: true, runValidators: true })
+    await User.findByIdAndUpdate(friend._id, { $addToSet: { friends: user._id } }, { new: true, runValidators: true })
+    return res.status(200).json({ error: '' })
 }))
 
 /**
@@ -711,23 +711,23 @@ userRouter.post('/friends/:friendId', isLoggedIn, catchAsync(async(req, res)=>{
  *              description: this user is not in your friends list
  *              
  */
-userRouter.delete('/friends/:friendId', isLoggedIn, catchAsync(async(req,res)=>{
+userRouter.delete('/friends/:friendId', isLoggedIn, catchAsync(async (req, res) => {
     const user = await User.findById(req.user._id).populate('friends')
-    const {friendId} = req.params
+    const { friendId } = req.params
 
-    if(friendId == req.user._id){
-        return res.status(400).json({error:'cannot delete yourself from your friends list'})
+    if (friendId == req.user._id) {
+        return res.status(400).json({ error: 'cannot delete yourself from your friends list' })
     }
 
-    for (let friend of user.friends){
-        if(friend._id.toString() == friendId){
-            await User.findByIdAndUpdate(req.user._id, {$pull: {friends: friendId}}, {new: true, runValidators: true}) 
-            await User.findByIdAndUpdate(friendId, {$pull: {friends: req.user._id}}, {new: true, runValidators: true}) 
-            return res.status(200).json({error:''})
+    for (let friend of user.friends) {
+        if (friend._id.toString() == friendId) {
+            await User.findByIdAndUpdate(req.user._id, { $pull: { friends: friendId } }, { new: true, runValidators: true })
+            await User.findByIdAndUpdate(friendId, { $pull: { friends: req.user._id } }, { new: true, runValidators: true })
+            return res.status(200).json({ error: '' })
         }
     }
 
-    return res.status(404).json({error:'this user is not in your friends list'})
+    return res.status(404).json({ error: 'this user is not in your friends list' })
 
 }))
 
@@ -756,21 +756,25 @@ userRouter.delete('/friends/:friendId', isLoggedIn, catchAsync(async(req,res)=>{
  *          '401':
  *              description: you are not authenticated
  */
-userRouter.get('/users',  isLoggedIn, catchAsync(async(req, res)=>{
-    const {q} = req.query
+userRouter.get('/users', isLoggedIn, catchAsync(async (req, res) => {
+    const { q } = req.query
     console.log(req.query);
-    await User.find({$and: [ {_id: {$ne:req.user._id}},
-                    {$or: 
-                        [{ "firstName": { "$regex": `${q}`, "$options": "i" }},
-                        { "lastName": { "$regex": `${q}`, "$options": "i" }},
-                        { "username": { "$regex": `${q}`, "$options": "i" }},
-                        { "email": { "$regex": `${q}`, "$options": "i" }},
-                        { "phone": { "$regex": `${q}`, "$options": "i" }}           /**@TODO Remove this because phone numbers shouldn't be public.*/
-    ]}]}, (error, docs)=>{
-        if (error){
-            return res.status(500).json({error:'search failed'})
-        }else{
-            return res.status(200).json({users: docs, error:''})
+    await User.find({
+        $and: [{ _id: { $ne: req.user._id } },
+        {
+            $or:
+                [{ "firstName": { "$regex": `${q}`, "$options": "i" } },
+                { "lastName": { "$regex": `${q}`, "$options": "i" } },
+                { "username": { "$regex": `${q}`, "$options": "i" } },
+                { "email": { "$regex": `${q}`, "$options": "i" } },
+                { "phone": { "$regex": `${q}`, "$options": "i" } }           /**@TODO Remove this because phone numbers shouldn't be public.*/
+                ]
+        }]
+    }, (error, docs) => {
+        if (error) {
+            return res.status(500).json({ error: 'search failed' })
+        } else {
+            return res.status(200).json({ users: docs, error: '' })
         }
     }).clone()
 }))
