@@ -285,10 +285,15 @@ eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, isInvited, catchAs
  *                              description: the event address
  *                              example: 1333 something lane                       
  *                          date:
- *                              type: string
+ *                              type: date-time
  *                              description: the date, TODO, Make this datatime instead of a string
- *                              example: Monday 
- * 
+ *                              example: 2022-04-21T17:32:28Z
+ *                      required:
+ *                        - name
+ *                        - description
+ *                        - tags
+ *                        - address
+ *                        - date
  *         
  *      responses:
  *          '200':
@@ -297,11 +302,14 @@ eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, isInvited, catchAs
  *              description: There is an unexepected issue creating this event
  *          '401':
  *              description: you are not authenticated
+ *          '400':
+ *              description: the "date" parameter is not a date.
  *              
  */
 eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
 
     const {name, description="", tags=[], address, date} = req.body;
+    if(!Date.parse(date)) {return res.status(400).json({error:'the date parameter is not a date.'})}
     const admin = await User.findById(req.user._id)
     const newEvent = new Event({name : name, description : description, tags : tags, address : address, date : date, admin : admin});
     await newEvent.save();
