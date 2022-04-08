@@ -516,13 +516,12 @@ userRouter.delete('/account', isLoggedIn, catchAsync(async (req, res) => {
 //update your account
 
 /**
- * @TODO Make the token, a JWT 
  * 
  * 
  * @swagger
  * /account:
  *  put:
- *      description: Registers a user.
+ *      description: update your account
  *      tags:
  *        - UserAuthentication
  *        - Put
@@ -553,7 +552,7 @@ userRouter.delete('/account', isLoggedIn, catchAsync(async (req, res) => {
  *         
  *      responses:
  *          '200':
- *              description: email sent
+ *              description: Updated Account
  *          '500':
  *              description: there is an issue creating the account (this needs to be better)
  *          '503':
@@ -595,7 +594,7 @@ userRouter.put('/account', isLoggedIn, catchAsync(async (req, res) => {
         //await User.findByIdAndUpdate(req.user._id, { $set: { firstName: firstName, lastName: lastName, email: email, phone: phone, username: username } }, { new: true, runValidators: true });
         await User.findByIdAndUpdate(req.user._id, { $set: { firstName: firstName, lastName: lastName, phone: phone, username: username } }, { new: true, runValidators: true });
 
-        return res.status(200).json({ error: '' })
+        return res.status(200).json({ error: 'Updated Account' })
     } catch (e) {
         console.log(e)
         return res.status(500).json({ error: 'user could not be updated' })
