@@ -577,12 +577,12 @@ userRouter.put('/account', isLoggedIn, catchAsync(async (req, res) => {
         }
 
         const usersWithThatEmail = await User.find({ email: email })
-        if (usersWithThatEmail.lengt > 0 && (usersWithThatEmail.length > 1 || usersWithThatEmail[0]._id.toString() != req.user._id)) {
+        if (usersWithThatEmail.length > 0 && (usersWithThatEmail.length > 1 || usersWithThatEmail[0]._id.toString() != req.user._id)) {
             return res.status(500).json({ error: 'email is taken' })
         }
 
         const usersWithThatPhone = await User.find({ phone: phone })
-        if (usersWithThatPhone.length > 1 || usersWithThatPhone[0]._id.toString() != req.user._id) {
+        if (usersWithThatPhone.length > 0 && (usersWithThatPhone.length > 1 || usersWithThatPhone[0]._id.toString() != req.user._id)) {
             return res.status(500).json({ error: 'phone is taken' })
         }
 
