@@ -514,6 +514,58 @@ userRouter.delete('/account', isLoggedIn, catchAsync(async (req, res) => {
 
 //VERIFICATION NEEDS TO BE IMPLEMENTED WHEN U CHANGE YOUR EMAIL
 //update your account
+
+/**
+ * @TODO Make the token, a JWT 
+ * 
+ * 
+ * @swagger
+ * /account:
+ *  put:
+ *      description: Registers a user.
+ *      tags:
+ *        - UserAuthentication
+ *        - Put
+ *      requestBody:
+ *          required: true
+ *          content:
+ *              application/x-www-form-urlencoded:
+ *                  schema:
+ *                      type: object
+ *                      properties:
+ *                          username:
+ *                              type: string
+ *                              description: the user's username, must be unique to any other username
+ *                              example: myusername
+ *                          firstName:
+ *                              type: string
+ *                              description: the user's first name
+ *                              example: rick                       
+ *                          lastName:
+ *                              type: string
+ *                              description: the user's last name
+ *                              example: leinecker        
+ *                          phone:
+ *                              type: string
+ *                              description: the user's phone number, must be 12 characters long
+ *                              example: 199999999999
+ * 
+ *         
+ *      responses:
+ *          '200':
+ *              description: email sent
+ *          '500':
+ *              description: there is an issue creating the account (this needs to be better)
+ *          '503':
+ *              description: email unable to be sent
+ *          '410':
+ *              description: username and email already taken
+ *          '411':
+ *              description: email already taken
+ *          '412':
+ *              description: username already taken
+ *              
+ */
 userRouter.put('/account', isLoggedIn, catchAsync(async (req, res) => {
     try {
         const user = await User.findById(req.user._id)
@@ -535,7 +587,13 @@ userRouter.put('/account', isLoggedIn, catchAsync(async (req, res) => {
             return res.status(500).json({ error: 'phone is taken' })
         }
 
-        await User.findByIdAndUpdate(req.user._id, { $set: { firstName: firstName, lastName: lastName, email: email, phone: phone, username: username } }, { new: true, runValidators: true });
+        /**
+         * @TODO : verify new email
+         * 
+         * For now don't update email.
+         */
+        //await User.findByIdAndUpdate(req.user._id, { $set: { firstName: firstName, lastName: lastName, email: email, phone: phone, username: username } }, { new: true, runValidators: true });
+        await User.findByIdAndUpdate(req.user._id, { $set: { firstName: firstName, lastName: lastName, phone: phone, username: username } }, { new: true, runValidators: true });
 
         return res.status(200).json({ error: '' })
     } catch (e) {
