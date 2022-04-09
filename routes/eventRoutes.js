@@ -4,7 +4,7 @@ const Task = require('../models/task')
 const Event = require('../models/event')
 
 const catchAsync = require('../utils/catchAsync')
-const {isLoggedIn, isAdmin, isInvited} = require('../middleware'); 
+const { isLoggedIn, isAdmin, isInvited } = require('../middleware');
 
 
 
@@ -25,23 +25,23 @@ const {isLoggedIn, isAdmin, isInvited} = require('../middleware');
  *          '500':
  *              description: unexepected error
  */
-eventRouter.get('/events', isLoggedIn, catchAsync(async(req, res) => {
-	const id = req.user._id
-	const events = await Event.find({$or: [{guests:id}, {admin:id}]})
-    .populate({ 
-		path: 'tasks',
-		populate: {
-		  path: 'assignees',
-		  model: 'User'
-		} 
-	 })
-     .populate({ 
-		path: 'guests'
-	 })
-    .populate({
-        path: 'admin'
-    })
-	res.json({ events })
+eventRouter.get('/events', isLoggedIn, catchAsync(async (req, res) => {
+    const id = req.user._id
+    const events = await Event.find({ $or: [{ guests: { $in: [id] } }, { admin: id }] })
+        .populate({
+            path: 'tasks',
+            populate: {
+                path: 'assignees',
+                model: 'User'
+            }
+        })
+        .populate({
+            path: 'guests'
+        })
+        .populate({
+            path: 'admin'
+        })
+    res.json({ events })
 }))
 
 //View the tasks the user has assigned to them 
@@ -61,16 +61,16 @@ eventRouter.get('/events', isLoggedIn, catchAsync(async(req, res) => {
  *          '500':
  *              description: unexepected error
  */
- eventRouter.get('/tasks', isLoggedIn, catchAsync(async(req, res) => {
-	const id = req.user._id
-	const tasks = await Task.find({assignees : id})
-     .populate({ 
-		path: 'assignees'
-	 })
-    .populate({
-        path: 'event'
-    })
-	res.json({ tasks })
+eventRouter.get('/tasks', isLoggedIn, catchAsync(async (req, res) => {
+    const id = req.user._id
+    const tasks = await Task.find({ assignees: { $in: [id] } })
+        .populate({
+            path: 'assignees'
+        })
+        .populate({
+            path: 'event'
+        })
+    res.json({ tasks })
 }))
 
 // View the guests of a specific event
@@ -102,10 +102,10 @@ eventRouter.get('/events', isLoggedIn, catchAsync(async(req, res) => {
  *              description: party was not found (you were not invited)
  *              
  */
-eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(async(req, res) => {
-	const { eventId } = req.params;
-	const currEvent = await Event.findById(eventId).populate('guests')
-	res.json({guests: currEvent.guests});
+eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(async (req, res) => {
+    const { eventId } = req.params;
+    const currEvent = await Event.findById(eventId).populate('guests')
+    res.json({ guests: currEvent.guests });
 }))
 
 // View the details of a specific event
@@ -137,23 +137,23 @@ eventRouter.get('/events/:eventId/guests', isLoggedIn, isInvited, catchAsync(asy
  *              description: party was not found (you were not invited)"
  *              
  */
-eventRouter.get('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(req, res) => {
-	const { eventId } = req.params;
-	const currEvent = await Event.findById(eventId)
-        .populate({ 
-		path: 'tasks',
-		populate: {
-		  path: 'assignees',
-		  model: 'User'
-		} 
-	 })
-     .populate({ 
-		path: 'guests'
-	 })
-    .populate({
-        path: 'admin'
-    })
-	res.json({ currEvent });
+eventRouter.get('/events/:eventId', isLoggedIn, isInvited, catchAsync(async (req, res) => {
+    const { eventId } = req.params;
+    const currEvent = await Event.findById(eventId)
+        .populate({
+            path: 'tasks',
+            populate: {
+                path: 'assignees',
+                model: 'User'
+            }
+        })
+        .populate({
+            path: 'guests'
+        })
+        .populate({
+            path: 'admin'
+        })
+    res.json({ currEvent });
 }))
 
 // View the tasks of a specific event
@@ -185,17 +185,17 @@ eventRouter.get('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(req,
  *              description: party was not found (you were not invited)"
  *              
  */
-eventRouter.get('/events/:eventId/tasks', isLoggedIn, isInvited, catchAsync(async(req, res) => {
-	const { eventId } = req.params;
-	const currEvent = await Event.findById(eventId)
-	.populate({ 
-		path: 'tasks',
-		populate: {
-		  path: 'assignees',
-		  model: 'User'
-		} 
-	 })
-	res.json({tasks: currEvent.tasks});
+eventRouter.get('/events/:eventId/tasks', isLoggedIn, isInvited, catchAsync(async (req, res) => {
+    const { eventId } = req.params;
+    const currEvent = await Event.findById(eventId)
+        .populate({
+            path: 'tasks',
+            populate: {
+                path: 'assignees',
+                model: 'User'
+            }
+        })
+    res.json({ tasks: currEvent.tasks });
 }))
 
 // View the details of a particular task
@@ -235,18 +235,18 @@ eventRouter.get('/events/:eventId/tasks', isLoggedIn, isInvited, catchAsync(asyn
  *              description: event not found or task does not exist"
  *              
  */
-eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, isInvited, catchAsync(async(req, res) => {
-	const { taskId,eventId } = req.params;
+eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, isInvited, catchAsync(async (req, res) => {
+    const { taskId, eventId } = req.params;
     const event = await Event.findById(eventId)
-    for (let task of event.tasks){
-        if (task == taskId){
+    for (let task of event.tasks) {
+        if (task == taskId) {
             const currTask = await Task.findById(taskId).populate('assignees')
-            if(!currTask) return res.status(404).json({error:'Task does not exist'})
+            if (!currTask) return res.status(404).json({ error: 'Task does not exist' })
 
-	        return res.status(200).json({currTask})
+            return res.status(200).json({ currTask })
         }
-     }
-     res.status(404).json({error:'task does not belong to this event'})
+    }
+    res.status(404).json({ error: 'task does not belong to this event' })
 }))
 
 
@@ -306,15 +306,15 @@ eventRouter.get('/events/:eventId/tasks/:taskId', isLoggedIn, isInvited, catchAs
  *              description: the "date" parameter is not a date.
  *              
  */
-eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
+eventRouter.post('/events', isLoggedIn, catchAsync(async (req, res) => {
 
-    const {name, description="", tags=[], address, date} = req.body;
-    if(!Date.parse(date)) {return res.status(400).json({error:'the date parameter is not a date.'})}
+    const { name, description = "", tags = [], address, date } = req.body;
+    if (!Date.parse(date)) { return res.status(400).json({ error: 'the date parameter is not a date.' }) }
     const admin = await User.findById(req.user._id)
-    const newEvent = new Event({name : name, description : description, tags : tags, address : address, date : date, admin : admin});
+    const newEvent = new Event({ name: name, description: description, tags: tags, address: address, date: date, admin: admin });
     await newEvent.save();
-    
-    res.status(200).json({newEvent});
+
+    res.status(200).json({ newEvent });
 }))
 
 //Update event information
@@ -378,31 +378,31 @@ eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
  *              description: Fields cannot be empty
  *              
  */
-eventRouter.put('/events/:eventId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
+eventRouter.put('/events/:eventId', isLoggedIn, isAdmin, catchAsync(async (req, res) => {
 
-    const {eventId} = req.params;
+    const { eventId } = req.params;
 
     const event = await Event.findById(eventId);
-    if(!event){return res.status(404).json({error:'Event does not exist'})}
-    const {name=event.name, description=event.description, tags=event.tags, address=event.address, date=event.date} = req.body;
+    if (!event) { return res.status(404).json({ error: 'Event does not exist' }) }
+    const { name = event.name, description = event.description, tags = event.tags, address = event.address, date = event.date } = req.body;
 
-    if(name == '' || date == '' || address == ''){return res.status(500).json({error:'Fields required'})}
-    const updatedEvent = await Event.findByIdAndUpdate(eventId, {$set: {name : name, description : description, tags : tags, address : address, date : date}}, {new: true, runValidators: true})    
-    .populate({ 
-		path: 'tasks',
-		populate: {
-		  path: 'assignees',
-		  model: 'User'
-		} 
-	 })
-     .populate({ 
-		path: 'guests'
-	 })
-    .populate({
-        path: 'admin'
-    });
-    
-    res.status(200).json({updatedEvent});
+    if (name == '' || date == '' || address == '') { return res.status(500).json({ error: 'Fields required' }) }
+    const updatedEvent = await Event.findByIdAndUpdate(eventId, { $set: { name: name, description: description, tags: tags, address: address, date: date } }, { new: true, runValidators: true })
+        .populate({
+            path: 'tasks',
+            populate: {
+                path: 'assignees',
+                model: 'User'
+            }
+        })
+        .populate({
+            path: 'guests'
+        })
+        .populate({
+            path: 'admin'
+        });
+
+    res.status(200).json({ updatedEvent });
 }))
 
 
@@ -472,24 +472,24 @@ eventRouter.put('/events/:eventId', isLoggedIn, isAdmin, catchAsync(async(req, r
  *              description: task not in list
  *              
  */
-eventRouter.put('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
+eventRouter.put('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsync(async (req, res) => {
 
-    const {eventId, taskId} = req.params;
+    const { eventId, taskId } = req.params;
 
     const event = await Event.findById(eventId);
-    if(!event){return res.status(500).json({error:'Event does not exist'})}
+    if (!event) { return res.status(500).json({ error: 'Event does not exist' }) }
 
     const task = await Task.findById(taskId);
-    if(!task){return res.status(500).json({error:'Task does not exist'})}
-    if(task.event != eventId){return res.status(500).json({error:'Task is not part of this event'})}
+    if (!task) { return res.status(500).json({ error: 'Task does not exist' }) }
+    if (task.event != eventId) { return res.status(500).json({ error: 'Task is not part of this event' }) }
 
-    const {name=task.name, description=task.description, assignees=task.assignees, done=task.done} = req.body;
-    if(name == '' || done == ''){return res.status(500).json({error:'Fields required'})}
+    const { name = task.name, description = task.description, assignees = task.assignees, done = task.done } = req.body;
+    if (name == '' || done == '') { return res.status(500).json({ error: 'Fields required' }) }
 
     //check the adding to assignees part
-    await Task.findByIdAndUpdate(taskId, {$set: {name : name, description : description, assignees : assignees, done : done}}, {new: true, runValidators: true});
-    
-    res.status(200).json({'error':''});
+    await Task.findByIdAndUpdate(taskId, { $set: { name: name, description: description, assignees: assignees, done: done } }, { new: true, runValidators: true });
+
+    res.status(200).json({ 'error': '' });
 }))
 
 
@@ -523,32 +523,30 @@ eventRouter.put('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsyn
  * 
  *              
  */
-eventRouter.delete('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(req, res)=>{
-    const {eventId} = req.params;
+eventRouter.delete('/events/:eventId', isLoggedIn, isInvited, catchAsync(async (req, res) => {
+    const { eventId } = req.params;
     const userId = req.user._id
     const event = await Event.findById(eventId)
     const user = await User.findById(userId)
     const admin = event.admin
 
-    try
-    {
-        if(admin._id.toString() == userId){
+    try {
+        if (admin._id.toString() == userId) {
             await Event.findByIdAndDelete(eventId);
         }
 
-        else{
-            await Event.findByIdAndUpdate(event._id, {$pull: {guests: req.user._id}}, {new: true, runValidators: true})
-            await User.findByIdAndUpdate(user._id, {$pull: {events: event._id}}, {new: true, runValidators: true})
-            
-            await Task.updateMany({event:eventId}, {$pull:{assignees:req.user._id}}, {new:true, runValidators:true})
+        else {
+            await Event.findByIdAndUpdate(event._id, { $pull: { guests: req.user._id } }, { new: true, runValidators: true })
+            await User.findByIdAndUpdate(user._id, { $pull: { events: event._id } }, { new: true, runValidators: true })
+
+            await Task.updateMany({ event: eventId }, { $pull: { assignees: req.user._id } }, { new: true, runValidators: true })
         }
     }
-    catch(err)
-    {
-        return res.status(500).json({status:'an unexpected error occured'});
+    catch (err) {
+        return res.status(500).json({ status: 'an unexpected error occured' });
     }
-    
-    res.status(200).json({status:'successfully deleted event'});
+
+    res.status(200).json({ status: 'successfully deleted event' });
 }))
 
 
@@ -593,20 +591,20 @@ eventRouter.delete('/events/:eventId', isLoggedIn, isInvited, catchAsync(async(r
  *              description: event does not exist
  *              
  */
-eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
+eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchAsync(async (req, res) => {
 
-    const {eventId, guestId} = req.params;
+    const { eventId, guestId } = req.params;
     const event = await Event.findById(eventId);
     const guest = await User.findById(guestId)
 
-    if(!event){return res.status(411).json({error:'Event does not exist'})}
-    if(event.guests.indexOf(guestId) != -1){ return res.status(410).json({error:'Guest already found in guest list'})}
+    if (!event) { return res.status(411).json({ error: 'Event does not exist' }) }
+    if (event.guests.indexOf(guestId) != -1) { return res.status(410).json({ error: 'Guest already found in guest list' }) }
 
-    await Event.findByIdAndUpdate(event._id, { $addToSet: { guests: guest } }, {new: true, runValidators: true})
-    const newGuest = await User.findByIdAndUpdate(guest._id, { $addToSet: { events: event } }, {new: true, runValidators: true})
+    await Event.findByIdAndUpdate(event._id, { $addToSet: { guests: guest } }, { new: true, runValidators: true })
+    const newGuest = await User.findByIdAndUpdate(guest._id, { $addToSet: { events: event } }, { new: true, runValidators: true })
 
     event.save()
-    res.status(200).json({newGuest});
+    res.status(200).json({ newGuest });
 }))
 
 //Deletes a guest if the guest is in the event
@@ -648,26 +646,26 @@ eventRouter.post('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchA
  *              description: event does not exist
  *              
  */
-eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
+eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catchAsync(async (req, res) => {
 
-    const {eventId, guestId} = req.params;
+    const { eventId, guestId } = req.params;
     const event = await Event.findById(eventId);
 
-    if(!event){return res.status(410).json({error:'Event does not exist'})}
+    if (!event) { return res.status(410).json({ error: 'Event does not exist' }) }
     const guestIndex = event.guests.indexOf(guestId);
-    if(guestIndex == -1){ return res.status(410).json({error:'Guest not found in guests list'})}
+    if (guestIndex == -1) { return res.status(410).json({ error: 'Guest not found in guests list' }) }
 
-    if(event.admin._id.toString() == guestId){
-        return res.status(403).json({error:"Cannot delete admin from the event"})
+    if (event.admin._id.toString() == guestId) {
+        return res.status(403).json({ error: "Cannot delete admin from the event" })
     }
 
-    const updateEvent =  await Event.findByIdAndUpdate(event._id, {$pull: {guests: guestId}}, {new: true, runValidators: true})
-    await User.findByIdAndUpdate(req.user._id, {$pull: {events: event._id}}, {new: true, runValidators: true})
+    const updateEvent = await Event.findByIdAndUpdate(event._id, { $pull: { guests: guestId } }, { new: true, runValidators: true })
+    await User.findByIdAndUpdate(req.user._id, { $pull: { events: event._id } }, { new: true, runValidators: true })
 
-    await Task.updateMany({event:eventId}, {$pull:{assignees:req.user._id}}, {new:true, runValidators:true})
+    await Task.updateMany({ event: eventId }, { $pull: { assignees: req.user._id } }, { new: true, runValidators: true })
 
     const remainingGuests = updateEvent.guests
-    res.status(200).json({remainingGuests});
+    res.status(200).json({ remainingGuests });
 }))
 
 //Adds a task to the event
@@ -729,35 +727,35 @@ eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catc
  *              description: Bad request. Name cannot be blank
  *              
  */
-eventRouter.post('/events/:eventId/tasks', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
+eventRouter.post('/events/:eventId/tasks', isLoggedIn, isAdmin, catchAsync(async (req, res) => {
 
-    const {eventId} = req.params;
-    const {name, description="", assignees = []} = req.body
+    const { eventId } = req.params;
+    const { name, description = "", assignees = [] } = req.body
 
-    if(name == '') return res.status(400).json({error:"name cannot be blank"})
+    if (name == '') return res.status(400).json({ error: "name cannot be blank" })
 
-    if(assignees == []){
-        task = new Task({name:name, description:description, done:false, event:eventId})
+    if (assignees == []) {
+        task = new Task({ name: name, description: description, done: false, event: eventId })
     } else {
-        task = new Task({name:name, description:description, assignees:assignees, done:false, event:eventId})
+        task = new Task({ name: name, description: description, assignees: assignees, done: false, event: eventId })
     }
-    
+
     //return res.status(400).json({error:"name cannot be blank"})
-    
+
     await task.save()
     const event = await Event.findById(eventId);
-    
-    if(!event) return res.status(404).json({error:"Event does not exist"})
 
-    const retval = await Event.findByIdAndUpdate(event._id, { $addToSet: { tasks: task } }, {new: true, runValidators: true})
-	.populate({ 
-		path: 'tasks',
-		populate: {
-		  path: 'assignees',
-		  model: 'User'
-		} 
-	 })
-    res.status(200).json({retval});
+    if (!event) return res.status(404).json({ error: "Event does not exist" })
+
+    const retval = await Event.findByIdAndUpdate(event._id, { $addToSet: { tasks: task } }, { new: true, runValidators: true })
+        .populate({
+            path: 'tasks',
+            populate: {
+                path: 'assignees',
+                model: 'User'
+            }
+        })
+    res.status(200).json({ retval });
 }))
 
 //Delete a task from an event if the tesk is in the event
@@ -799,20 +797,20 @@ eventRouter.post('/events/:eventId/tasks', isLoggedIn, isAdmin, catchAsync(async
  *              description: task not in list
  *              
  */
-eventRouter.delete('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsync(async(req, res)=>{
+eventRouter.delete('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsync(async (req, res) => {
 
-    const {eventId, taskId} = req.params;
+    const { eventId, taskId } = req.params;
     const event = await Event.findById(eventId);
 
-    if(!event){return res.status(404).json({error:'event does not exist'})}
+    if (!event) { return res.status(404).json({ error: 'event does not exist' }) }
     const taskIndex = event.tasks.indexOf(taskId);
-    if(taskIndex == -1) {return res.status(410).json({error:'task does not in list'})}
+    if (taskIndex == -1) { return res.status(410).json({ error: 'task does not in list' }) }
 
-    const updatedEvent = await Event.findByIdAndUpdate(event._id, {$pull: {tasks: taskId}}, {new: true, runValidators: true})
+    const updatedEvent = await Event.findByIdAndUpdate(event._id, { $pull: { tasks: taskId } }, { new: true, runValidators: true })
     await Task.findByIdAndDelete(taskId)
 
     const tasks = updatedEvent.tasks
-    res.status(200).json({tasks});
+    res.status(200).json({ tasks });
 }))
 
 module.exports = eventRouter;
