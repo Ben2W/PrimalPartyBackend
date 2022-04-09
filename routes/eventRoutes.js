@@ -663,7 +663,7 @@ eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catc
     }
 
     const updateEvent =  await Event.findByIdAndUpdate(event._id, {$pull: {guests: guestId}}, {new: true, runValidators: true})
-    await User.findByIdAndUpdate(req.user._id, {$pull: {events: event._id}}, {new: true, runValidators: true})
+    await User.findByIdAndUpdate(guestId, {$pull: {events: event._id}}, {new: true, runValidators: true})
 
     await Task.updateMany({event:eventId}, {$pull:{assignees:req.user._id}}, {new:true, runValidators:true})
 
