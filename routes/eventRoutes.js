@@ -312,6 +312,7 @@ eventRouter.post('/events', isLoggedIn, catchAsync(async(req, res)=>{
     if(!Date.parse(date)) {return res.status(400).json({error:'the date parameter is not a date.'})}
     const admin = await User.findById(req.user._id)
     const newEvent = new Event({name : name, description : description, tags : tags, address : address, date : date, admin : admin});
+    const updatedAdmin = await User.findByIdAndUpdate(req.user._id, { $addToSet: { events: newEvent}}, {new: true, runValidators: true})
     await newEvent.save();
     
     res.status(200).json({newEvent});
@@ -662,7 +663,7 @@ eventRouter.delete('/events/:eventId/guests/:guestId', isLoggedIn, isAdmin, catc
     }
 
     const updateEvent =  await Event.findByIdAndUpdate(event._id, {$pull: {guests: guestId}}, {new: true, runValidators: true})
-    await User.findByIdAndUpdate(req.user._id, {$pull: {events: event._id}}, {new: true, runValidators: true})
+    await User.findByIdAndUpdate(guestId, {$pull: {events: event._id}}, {new: true, runValidators: true})
 
     await Task.updateMany({event:eventId}, {$pull:{assignees:req.user._id}}, {new:true, runValidators:true})
 
