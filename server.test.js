@@ -56,7 +56,7 @@ describe("POST /events GET /events/:eventId and then DELETE /events/:eventId", (
 		description: "movie night with the boys",
 		tags: "movie",
 		address: "1333 something lane",
-		date: "Monday"
+		date: "04-20-2022"
 	}).set('cookie', cookie)
 	
     expect(response.statusCode).toBe(200);
@@ -65,7 +65,7 @@ describe("POST /events GET /events/:eventId and then DELETE /events/:eventId", (
 	expect(response.body.newEvent.description).toEqual("movie night with the boys");
 	expect(response.body.newEvent.tags[0]).toEqual("movie");
 	expect(response.body.newEvent.address).toEqual("1333 something lane");
-	expect(response.body.newEvent.date).toEqual("Monday");
+	expect(response.body.newEvent.date).toEqual("2022-04-20T04:00:00.000Z");
 	
 	id = response.body.newEvent._id;
 	
@@ -78,12 +78,12 @@ describe("POST /events GET /events/:eventId and then DELETE /events/:eventId", (
 			description: "movie night with the boys",
 			tags: "movie",
 			address: "1333 something lane",
-			date: "Monday"
+			date: "04-22-2022"
 		}).set('cookie', cookie)
 			
 		expect(update.statusCode).toBe(200);
 		expect(update.body.updatedEvent.name).toEqual("movienighttest")
-		expect(update.body.updatedEvent.date).toEqual("Monday")
+		expect(update.body.updatedEvent.date).toEqual("2022-04-22T04:00:00.000Z")
 	
 	const del = await request(app).delete(`/events/${id}`).set('cookie', cookie)
 	
@@ -105,23 +105,23 @@ describe("POST /events/:eventId/guests/:guestId, GET /events/:eventId/guests, DE
 		description: "event to test tasks",
 		tags: "test",
 		address: "1333 something lane",
-		date: "Monday"
+		date: "04-20-2022"
 		}).set('cookie', cookie)
 	
 		expect(newEv.statusCode).toBe(200);
 		id = newEv.body.newEvent._id
 		
-		const response = await request(app).post(`/events/${id}/guests/623cf2b92f5edc1694f36fb6`).set('cookie', cookie)
+		const response = await request(app).post(`/events/${id}/guests/6251ea712b3cc649cba328d8`).set('cookie', cookie)
 		
 		expect(response.statusCode).toBe(200);
-		expect(response.body.newGuest.lastName).toEqual("Joe")
+		expect(response.body.newGuest.lastName).toEqual("Pie")
 		
 		const check = await request(app).get(`/events/${id}/guests`).set('cookie', cookie)
 		
 		expect(check.statusCode).toBe(200);
-		expect(check.body.guests[0].lastName).toEqual("Joe")
+		expect(check.body.guests[0].lastName).toEqual("Pie")
 		
-		const del = await request(app).delete(`/events/${id}/guests/623cf2b92f5edc1694f36fb6`).set('cookie', cookie)
+		const del = await request(app).delete(`/events/${id}/guests/6251ea712b3cc649cba328d8`).set('cookie', cookie)
 		
 		expect(del.statusCode).toBe(200);
 		
@@ -145,7 +145,7 @@ describe("POST /events/:eventId/tasks then PUT, GET, and DELETE /events/:eventId
 		description: "event to test tasks",
 		tags: "test",
 		address: "1333 something lane",
-		date: "Monday"
+		date: "04-20-2022"
 		}).set('cookie', cookie)
 	
 		expect(newEv.statusCode).toBe(200);
@@ -154,7 +154,7 @@ describe("POST /events/:eventId/tasks then PUT, GET, and DELETE /events/:eventId
 		const response = await request(app).post(`/events/${id}/tasks`).send({
 			name: "Bring cookies",
 			description: "bring chocolate chip and sugar cookies",
-			assignees: "623cf2b92f5edc1694f36fb6"
+			assignees: "6251ea712b3cc649cba328d8"
 			
 		}).set('cookie', cookie)
 		expect(response.statusCode).toBe(200);
@@ -169,7 +169,7 @@ describe("POST /events/:eventId/tasks then PUT, GET, and DELETE /events/:eventId
 		const cTask = await request(app).put(`/events/${id}/tasks/${taskId}`).send({
 			name: "test",
 			description: "bring chocolate chip and sugar cookies",
-			assignees: "623cf2b92f5edc1694f36fb6",
+			assignees: "6251ea712b3cc649cba328d8",
 			done: "false"
 		}).set('cookie', cookie)
 		expect(cTask.statusCode).toBe(200);
@@ -241,13 +241,13 @@ describe("POST /friends/:friendId GET it and then DELETE", () => {
 	
 	cookie = login.headers['set-cookie'];
 	
-    const response = await request(app).post("/friends/623cf2b92f5edc1694f36fb6").set('cookie', cookie)
+    const response = await request(app).post("/friends/6251ea712b3cc649cba328d8").set('cookie', cookie)
     expect(response.statusCode).toBe(200);
 	
-	const check = await request(app).get("/friends/623cf2b92f5edc1694f36fb6").set('cookie', cookie)
+	const check = await request(app).get("/friends/6251ea712b3cc649cba328d8").set('cookie', cookie)
     expect(check.statusCode).toBe(200);
 	
-	const del = await request(app).delete("/friends/623cf2b92f5edc1694f36fb6").set('cookie', cookie)
+	const del = await request(app).delete("/friends/6251ea712b3cc649cba328d8").set('cookie', cookie)
     expect(del.statusCode).toBe(200);
   })
 })
