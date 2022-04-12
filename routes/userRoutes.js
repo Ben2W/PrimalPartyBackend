@@ -554,11 +554,9 @@ userRouter.delete('/account', isLoggedIn, catchAsync(async (req, res) => {
  *          '200':
  *              description: Updated Account
  *          '500':
- *              description: there is an issue creating the account (this needs to be better)
- *          '503':
- *              description: email unable to be sent
+ *              description: your phone number needs to be between 12 and 14 characters long
  *          '410':
- *              description: username and email already taken
+ *              description: phone already taken
  *          '411':
  *              description: email already taken
  *          '412':
@@ -573,17 +571,17 @@ userRouter.put('/account', isLoggedIn, catchAsync(async (req, res) => {
 
         const usersWithThatUsername = await User.find({ username: username })
         if (usersWithThatUsername.length > 0 && (usersWithThatUsername.length > 1 || usersWithThatUsername[0]._id.toString() != req.user._id)) {
-            return res.status(500).json({ error: 'username is taken' })
+            return res.status(412).json({ error: 'username is taken' })
         }
 
         const usersWithThatEmail = await User.find({ email: email })
         if (usersWithThatEmail.length > 0 && (usersWithThatEmail.length > 1 || usersWithThatEmail[0]._id.toString() != req.user._id)) {
-            return res.status(500).json({ error: 'email is taken' })
+            return res.status(411).json({ error: 'email is taken' })
         }
 
         const usersWithThatPhone = await User.find({ phone: phone })
         if (usersWithThatPhone.length > 0 && (usersWithThatPhone.length > 1 || usersWithThatPhone[0]._id.toString() != req.user._id)) {
-            return res.status(500).json({ error: 'phone is taken' })
+            return res.status(410).json({ error: 'phone is taken' })
         }
 
         /**
