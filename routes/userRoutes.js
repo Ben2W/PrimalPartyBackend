@@ -590,9 +590,9 @@ userRouter.put('/account', isLoggedIn, catchAsync(async (req, res) => {
          * For now don't update email.
          */
         //await User.findByIdAndUpdate(req.user._id, { $set: { firstName: firstName, lastName: lastName, email: email, phone: phone, username: username } }, { new: true, runValidators: true });
-        await User.findByIdAndUpdate(req.user._id, { $set: { firstName: firstName, lastName: lastName, phone: phone, username: username } }, { new: true, runValidators: true });
+        const updatedUser = await User.findByIdAndUpdate(req.user._id, { $set: { firstName: firstName, lastName: lastName, phone: phone, username: username } }, { new: true, runValidators: true });
 
-        return res.status(200).json({ error: 'Updated Account' })
+        return res.status(200).json({ updatedUser })
     } catch (e) {
         console.log(e)
         return res.status(500).json({ error: 'user could not be updated' })
