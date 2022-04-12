@@ -12,7 +12,10 @@ require('dotenv').config()
 const sgMAILAPI = process.env.SENDGRID_API_KEY
 sgMail.setApiKey(sgMAILAPI)
 var crypto = require("crypto");
-const { MongoCursorInUseError } = require('mongodb');
+
+const phoneChecker = require('libphonenumber-js')
+const validator = require("email-validator");
+
 
 // @TODO Resend Token
 // @TODO delete user (if an attacker is using someone else' email AND the user has not been authorized yet.)
@@ -77,12 +80,22 @@ const { MongoCursorInUseError } = require('mongodb');
  *              description: username already taken
  *              
  */
+
+
 userRouter.post('/register', catchAsync(async (req, res, next) => {
     try {
 
-
         //Make sure the email and username are unique.
         const { username, email, phone } = req.body
+
+        if (!phoneChecker.isPossiblePhoneNumber(phone) || !phoneChecker.isValidPhoneNumber(phone)) {
+            return res.status(413).json({ error: 'invalid phone number' })
+        }
+
+        if (!validator.validate(email)) {
+            return res.status(414).json({ error: 'invalid email' })
+        }
+
         const duplicateUsername = await User.exists({ username: username });
         const duplicateEmail = await User.exists({ email: email });
         const duplicatePhone = await User.exists({ phone: phone })
@@ -91,8 +104,6 @@ userRouter.post('/register', catchAsync(async (req, res, next) => {
         if (duplicateEmail) return res.status(411).json({ error: 'email already taken' })
         if (duplicateUsername) return res.status(412).json({ error: 'username already taken' })
         if (duplicatePhone) return res.status(412).json({ error: 'phone already taken' })
-
-
 
 
         const { password, ...rest } = req.body
