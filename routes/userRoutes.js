@@ -127,7 +127,7 @@ userRouter.post('/register', catchAsync(async (req, res, next) => {
         }
 
         // Generate the token and add it to the DB
-        token = crypto.randomBytes(20).toString('hex');
+        token = crypto.randomBytes(3).toString('hex');
         await user.updateOne({ emailAuthToken: token, emailAuthTokenCreation: Date.now() });
 
         /*
