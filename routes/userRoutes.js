@@ -91,10 +91,6 @@ userRouter.post('/register', catchAsync(async (req, res, next) => {
         //Make sure the email and username are unique.
         const { username, email, phone } = req.body
 
-        //the phone format will be exactly (111)111-1111
-
-
-
         if (!validatePhoneNumber(phone)) {
             return res.status(413).json({ error: 'invalid phone number' })
         }
