@@ -100,7 +100,7 @@ emailRouter.put('/forgot', catchAsync(async(req, res, next) => {
     if(Date.now() - user.resetTokenCreation < spamCooldown){
         return res.status(409).json({error: 'please wait at least 15 seconds between reseting passwords'})
     }
-    token = crypto.randomBytes(20).toString('hex');
+    token = crypto.randomBytes(3).toString('hex');
     await user.updateOne({resetToken: token, resetTokenCreation: Date.now()});
 
 
