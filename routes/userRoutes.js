@@ -13,7 +13,6 @@ const sgMAILAPI = process.env.SENDGRID_API_KEY
 sgMail.setApiKey(sgMAILAPI)
 var crypto = require("crypto");
 
-const phoneChecker = require('libphonenumber-js')
 const validator = require("email-validator");
 
 
@@ -80,7 +79,11 @@ const validator = require("email-validator");
  *              description: username already taken
  *              
  */
+function validatePhoneNumber(input_str) {
+    let re = /^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/;
 
+    return re.test(input_str);
+}
 
 userRouter.post('/register', catchAsync(async (req, res, next) => {
     try {
@@ -88,7 +91,7 @@ userRouter.post('/register', catchAsync(async (req, res, next) => {
         //Make sure the email and username are unique.
         const { username, email, phone } = req.body
 
-        if (!phoneChecker.isPossiblePhoneNumber(phone) || !phoneChecker.isValidPhoneNumber(phone)) {
+        if (!validatePhoneNumber(phone)) {
             return res.status(413).json({ error: 'invalid phone number' })
         }
 
