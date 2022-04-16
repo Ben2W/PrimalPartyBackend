@@ -268,7 +268,7 @@ emailRouter.post('/reset/:token', catchAsync(async(req, res, next) => {
         if (err) {
             return res.status(500).json({error: 'there has been an issue logging in to your account'})
         }
-        res.status(200).json({error:''})
+        return res.json({ user })
         
     })
 
