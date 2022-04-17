@@ -488,9 +488,9 @@ eventRouter.put('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsyn
     if (name == '' || done == '') { return res.status(500).json({ error: 'Fields required' }) }
 
     //check the adding to assignees part
-    await Task.findByIdAndUpdate(taskId, { $set: { name: name, description: description, assignees: assignees, done: done } }, { new: true, runValidators: true });
+    const updatedTask = await Task.findByIdAndUpdate(taskId, { $set: { name: name, description: description, assignees: assignees, done: done } }, { new: true, runValidators: true });
 
-    res.status(200).json({ 'error': '' });
+    res.status(200).json(updatedTask);
 }))
 
 
