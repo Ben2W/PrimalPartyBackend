@@ -490,7 +490,7 @@ eventRouter.put('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsyn
     //check the adding to assignees part
     const updatedTask = await Task.findByIdAndUpdate(taskId, { $set: { name: name, description: description, assignees: assignees, done: done } }, { new: true, runValidators: true });
 
-    res.status(200).json(updatedTask);
+    res.status(200).json({ updatedTask });
 }))
 
 
