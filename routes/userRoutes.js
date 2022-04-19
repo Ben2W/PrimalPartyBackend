@@ -92,7 +92,7 @@ userRouter.post('/register', catchAsync(async (req, res, next) => {
         const { username, email, phone } = req.body
 
         if (!validatePhoneNumber(phone)) {
-            return res.status(413).json({ error: 'invalid phone number' })
+            return res.status(415).json({ error: 'invalid phone number' })
         }
 
         if (!validator.validate(email)) {
@@ -106,7 +106,7 @@ userRouter.post('/register', catchAsync(async (req, res, next) => {
         if (duplicateEmail && duplicateUsername && duplicatePhone) return res.status(410).json({ error: 'username, phone, and email already taken' })
         if (duplicateEmail) return res.status(411).json({ error: 'email already taken' })
         if (duplicateUsername) return res.status(412).json({ error: 'username already taken' })
-        if (duplicatePhone) return res.status(412).json({ error: 'phone already taken' })
+        if (duplicatePhone) return res.status(413).json({ error: 'phone already taken' })
 
 
         const { password, ...rest } = req.body
