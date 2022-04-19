@@ -493,6 +493,29 @@ eventRouter.put('/events/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsyn
     res.status(200).json({ updatedTask });
 }))
 
+eventRouter.put('/events2/:eventId/tasks/:taskId', isLoggedIn, isAdmin, catchAsync(async (req, res) => {
+
+    const { eventId, taskId } = req.params;
+
+    const event = await Event.findById(eventId);
+    if (!event) { return res.status(500).json({ error: 'Event does not exist' }) }
+
+    const task = await Task.findById(taskId);
+    if (!task) { return res.status(500).json({ error: 'Task does not exist' }) }
+    if (task.event != eventId) { return res.status(500).json({ error: 'Task is not part of this event' }) }
+
+    const { name = task.name, description = task.description, assignees = task.assignees, done = task.done } = req.body;
+    if (name == '' || done == '') { return res.status(500).json({ error: 'Fields required' }) }
+
+    //check the adding to assignees part
+    const updatedTask = await Task.findByIdAndUpdate(taskId, { $set: { name: name, description: description, assignees: assignees, done: done } }, { new: true, runValidators: true })
+        .populate({
+            path: 'assignees',
+            model: 'User'
+        })
+    res.status(200).json({ updatedTask });
+}))
+
 
 //Checks if the event exists and deletes it if so
 /**
