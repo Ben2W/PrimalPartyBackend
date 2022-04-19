@@ -296,7 +296,7 @@ userRouter.put('/resendauthorization', catchAsync(async (req, res, next) => {
     //const url = 'http://' + req.headers.host.toString() + /authorize/ + token.toString()
     const message = {
         to: email,
-        from: 'no-reply@primaljet.com',
+        from: 'no-reply@primalparty.com',
         templateId: 'd-23227d40a12040e8be6404e3f1fd9b4b',
         dynamicTemplateData: {
             name: user.username,
