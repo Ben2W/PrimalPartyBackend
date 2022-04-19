@@ -111,17 +111,17 @@ describe("POST /events/:eventId/guests/:guestId, GET /events/:eventId/guests, DE
 		expect(newEv.statusCode).toBe(200);
 		id = newEv.body.newEvent._id
 		
-		const response = await request(app).post(`/events/${id}/guests/6251ea712b3cc649cba328d8`).set('cookie', cookie)
+		const response = await request(app).post(`/events/${id}/guests/625da5d6003c896311f69c21`).set('cookie', cookie)
 		
 		expect(response.statusCode).toBe(200);
-		expect(response.body.newGuest.lastName).toEqual("Pie")
+		expect(response.body.newGuest.lastName).toEqual("mom2")
 		
 		const check = await request(app).get(`/events/${id}/guests`).set('cookie', cookie)
 		
 		expect(check.statusCode).toBe(200);
-		expect(check.body.guests[0].lastName).toEqual("Pie")
+		expect(check.body.guests[0].lastName).toEqual("mom2")
 		
-		const del = await request(app).delete(`/events/${id}/guests/6251ea712b3cc649cba328d8`).set('cookie', cookie)
+		const del = await request(app).delete(`/events/${id}/guests/625da5d6003c896311f69c21`).set('cookie', cookie)
 		
 		expect(del.statusCode).toBe(200);
 		
