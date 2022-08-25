@@ -1,6 +1,19 @@
-# Setting up the backend
 
-*Documentation for the this project: [https://spartanfa.github.io/PrimalPartyDocs/#/](https://spartanfa.github.io/PrimalPartyDocs/#/)*
+
+# About
+
+This is the Node.JS backend for PrimalParty.com, a CRUD party manager made for UCF's Junior Design class. 
+
+
+*Live Demo of this Backend: [https://www.primalparty.com/](https://www.primalparty.com/)*
+
+*Live Swaggerhub of this Backend: [https://primalpartybackend.azurewebsites.net/api-docs/](https://primalpartybackend.azurewebsites.net/api-docs/)*
+
+*React Frontend Repository: [https://github.com/SpartanFA/PrimalPartyFrontend](https://github.com/SpartanFA/PrimalPartyFrontend)*
+
+*React Native Mobile Frontend App Repository: [https://github.com/SpartanFA/PrimalPartyMobile](https://github.com/SpartanFA/PrimalPartyMobile)*
+
+# Setting up the backend
 
 ## Cloning the repository
 
