@@ -7,6 +7,8 @@ This is the Node.JS backend for PrimalParty.com, a CRUD party manager made for U
 
 *Live Demo of this Backend: [https://www.primalparty.com/](https://www.primalparty.com/)*
 
+Dummy Username: "2" Password: "password"
+
 *Live Swaggerhub of this Backend: [https://primalpartybackend.azurewebsites.net/api-docs/](https://primalpartybackend.azurewebsites.net/api-docs/)*
 
 *React Frontend Repository: [https://github.com/SpartanFA/PrimalPartyFrontend](https://github.com/SpartanFA/PrimalPartyFrontend)*
