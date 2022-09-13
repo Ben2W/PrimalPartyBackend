@@ -10,7 +10,7 @@ const express = require('express')
 emailRouter.use(express.urlencoded({extended:true}))
 emailRouter.use(express.json())
 
-// Sets up sendgrid dependancies.
+// Sets up sendgrid dependancies..
 const sgMail = require('@sendgrid/mail')
 require('dotenv').config()
 const sgMAILAPI = process.env.SENDGRID_API_KEY
